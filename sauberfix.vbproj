@@ -13,6 +13,6 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Sauberfix.Data\Sauberfix.Data.csproj" />
+    <ProjectReference Include="Sauberfix.Data\Sauberfix.Data.csproj" />
   </ItemGroup>
 </Project>
