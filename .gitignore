@@ -1,0 +1,12 @@
+# Build Ergebnisse ignorieren
+bin/
+obj/
+.vscode/
+
+# WICHTIG: Echte Konfigurationen mit Passwörtern ignorieren
+appsettings.json
+appsettings.Development.json
+
+# Betriebssystem Dateien
+.DS_Store
+Thumbs.db

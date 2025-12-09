@@ -1,0 +1,17 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=DEIN_HOST;Port=5432;Database=app;Username=app;Password=DEIN_PASSWORT"
+  },
+  "JwtSettings": {
+    "Key": "MUSS_MINDESTENS_32_ZEICHEN_LANG_SEIN_UND_GEHEIM!",
+    "Issuer": "SauberFixAPI",
+    "Audience": "SauberFixFrontend"
+  }
+}
