@@ -1,34 +1,53 @@
 Imports Sauberfix.Data
 Imports Microsoft.EntityFrameworkCore
 Imports Sauberfix 
+Imports System
 
 Namespace Services
     Public Class TerminService
         Private ReadOnly _db As AppDbContext
+        
+        ' Ein Termin dauert pauschal 60 Minuten
+        Private Const TERMIN_DAUER_MINUTEN As Integer = 60
+
         Public Sub New(db As AppDbContext)
             _db = db
         End Sub
 
         Public Function CreateTermin(input As CreateTerminDto) As TerminResponseDto
+            Dim kunde = _db.Kunden.Find(input.KundeId)
+            Dim mitarbeiter = _db.Mitarbeiter.Find(input.MitarbeiterId)
+
+            If kunde Is Nothing Or mitarbeiter Is Nothing Then
+                Throw New ArgumentException("Kunde oder Mitarbeiter nicht gefunden.")
+            End If
+
+            CheckKollision(input.MitarbeiterId, input.DatumUhrzeit, Nothing)
+
             Dim termin As New Termin() With {
-                .DatumUhrzeit = input.DatumUhrzeit, .Beschreibung = input.Beschreibung,
-                .KundeId = input.KundeId, .MitarbeiterId = input.MitarbeiterId, .Status = TerminStatus.Geplant, .ErstelltAm = DateTime.UtcNow
+                .DatumUhrzeit = input.DatumUhrzeit,
+                .Beschreibung = input.Beschreibung,
+                .KundeId = input.KundeId,
+                .MitarbeiterId = input.MitarbeiterId,
+                .Status = TerminStatus.Geplant,
+                .ErstelltAm = DateTime.UtcNow
             }
+
             _db.Termine.Add(termin)
             _db.SaveChanges()
             return GetOne(termin.Id)
         End Function
 
-        ' --- NEU: UPDATE ---
         Public Function UpdateTermin(id As Integer, input As CreateTerminDto) As TerminResponseDto
             Dim t = _db.Termine.Find(id)
             If t Is Nothing Then Throw New ArgumentException("Termin nicht gefunden")
+
+            CheckKollision(input.MitarbeiterId, input.DatumUhrzeit, id)
 
             t.DatumUhrzeit = input.DatumUhrzeit
             t.Beschreibung = input.Beschreibung
             t.KundeId = input.KundeId
             t.MitarbeiterId = input.MitarbeiterId
-            ' Status lassen wir hier erstmal, könnte man auch updatebar machen
             
             _db.SaveChanges()
             Return GetOne(t.Id)
@@ -52,6 +71,28 @@ Namespace Services
                 _db.Termine.Remove(t)
                 _db.SaveChanges()
             End If
+        End Sub
+
+        Private Sub CheckKollision(mitarbeiterId As Integer, startNeu As DateTime, ignoreTerminId As Integer?)
+            Dim endeNeu = startNeu.AddMinutes(TERMIN_DAUER_MINUTEN)
+            
+            Dim query = _db.Termine.Where(Function(t) t.MitarbeiterId = mitarbeiterId AndAlso t.Status <> TerminStatus.Storniert)
+
+            If ignoreTerminId.HasValue Then
+                query = query.Where(Function(t) t.Id <> ignoreTerminId.Value)
+            End If
+
+            Dim existierendeTermine = query.ToList()
+
+            For Each t In existierendeTermine
+                Dim startAlt = t.DatumUhrzeit
+                Dim endeAlt = t.DatumUhrzeit.AddMinutes(TERMIN_DAUER_MINUTEN)
+
+                If startNeu < endeAlt AndAlso endeNeu > startAlt Then
+                    ' --- HIER IST DIE ÄNDERUNG: .ToString("HH:mm") erzwingt 24h Format ---
+                    Throw New ArgumentException($"Kollision! Der Mitarbeiter hat bereits einen Termin von {startAlt.ToString("HH:mm")} bis {endeAlt.ToString("HH:mm")}.")
+                End If
+            Next
         End Sub
 
         Private Function GetOne(id As Integer) As TerminResponseDto

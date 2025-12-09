@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SauberFix</title>
+    <title>SauberFix Dienstleistungen</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; max-width: 1200px; margin: 2rem auto; padding: 0 1rem; background-color: #f4f4f9; color: #333; }
         .hidden { display: none; }
@@ -21,13 +21,15 @@
         td { padding: 0.8rem; border-bottom: 1px solid #eee; }
         .email-sent { color: green; font-weight: bold; }
         .email-wait { color: orange; }
+        .msg-success { color: green; font-weight: bold; margin-top: 5px; }
+        .msg-error { color: red; font-weight: bold; margin-top: 5px; }
     </style>
 </head>
 <body>
     <div style="display:flex; justify-content:space-between;">
-        <h1>🧹 SauberFix</h1>
+        <h1>🧹 SauberFix Dienstleistungen</h1>
         <div id="userInfo" class="hidden">
-            <span id="welcomeMsg"></span> <button onclick="logout()" class="secondary" style="width:auto;">Logout</button>
+            <span id="welcomeMsg"></span> <button onclick="logout()" class="secondary" style="width:auto;">Abmelden</button>
         </div>
     </div>
 
@@ -47,9 +49,9 @@
                     <h3 id="lblKunde">👥 Neuer Kunde</h3>
                     <input type="hidden" id="editK_Id" />
                     <div style="display:flex; gap:5px;"><input type="text" id="nk_Vor" placeholder="Vorname" /><input type="text" id="nk_Nach" placeholder="Nachname" /></div>
-                    <input type="text" id="nk_Strasse" placeholder="Straße" />
+                    <input type="text" id="nk_Strasse" placeholder="Straße & Hausnr." />
                     <div style="display:flex; gap:5px;"><input type="text" id="nk_Plz" placeholder="PLZ" style="width:80px;" /><input type="text" id="nk_Stadt" placeholder="Stadt" /></div>
-                    <input type="email" id="nk_Email" placeholder="Email" /><input type="text" id="nk_Tel" placeholder="Telefon" />
+                    <input type="email" id="nk_Email" placeholder="E-Mail Adresse" /><input type="text" id="nk_Tel" placeholder="Telefonnummer" />
                     
                     <button id="btnKunde" onclick="saveKunde()">Kunde speichern</button>
                     <button id="btnCancelK" onclick="resetKundeForm()" class="secondary hidden">Abbrechen</button>
@@ -61,8 +63,8 @@
                     <input type="hidden" id="editT_Id" /> 
                     <label>Wann?</label><input type="datetime-local" id="newT_Datum" />
                     <label>Was?</label><input type="text" id="newT_Desc" placeholder="Beschreibung" />
-                    <label>Kunde?</label><select id="newT_Kunde"></select>
-                    <label>Mitarbeiter?</label><select id="newT_MA"></select>
+                    <label>Bei wem?</label><select id="newT_Kunde"></select>
+                    <label>Wer macht's?</label><select id="newT_MA"></select>
                     
                     <button id="btnTermin" onclick="saveTermin()">Termin buchen</button>
                     <button id="btnCancelT" onclick="resetTerminForm()" class="secondary hidden">Abbrechen</button>
@@ -73,11 +75,11 @@
                     <h3 id="lblMA">👷 Neuer Mitarbeiter</h3>
                     <input type="hidden" id="editM_Id" />
                     <input type="text" id="newM_User" placeholder="Username" />
-                    <input type="password" id="newM_Pass" placeholder="Passwort (leer bei Edit)" />
+                    <input type="password" id="newM_Pass" placeholder="Passwort" />
                     <div style="display:flex; gap:5px;"><input type="text" id="newM_Vor" placeholder="Vorname" /><input type="text" id="newM_Nach" placeholder="Nachname" /></div>
-                    <select id="newM_Rolle"><option value="User">User</option><option value="Admin">Admin</option></select>
+                    <select id="newM_Rolle"><option value="User">Mitarbeiter (User)</option><option value="Admin">Verwaltung (Admin)</option></select>
                     
-                    <button id="btnMA" onclick="saveMitarbeiter()">Anlegen</button>
+                    <button id="btnMA" onclick="saveMitarbeiter()">Mitarbeiter anlegen</button>
                     <button id="btnCancelM" onclick="resetMitarbeiterForm()" class="secondary hidden">Abbrechen</button>
                     <p id="msgMitarbeiter"></p>
                 </div>
@@ -90,9 +92,9 @@
         </div>
 
         <div class="card">
-            <div style="display:flex; justify-content:space-between;"><h3>Termine</h3><button onclick="loadTermine()" style="width:auto;">Aktualisieren</button></div>
+            <div style="display:flex; justify-content:space-between;"><h3>Aktuelle Termine</h3><button onclick="loadTermine()" style="width:auto;">🔄 Aktualisieren</button></div>
             <table>
-                <thead><tr><th>Datum</th><th>Beschreibung</th><th>Kunde</th><th>Mitarbeiter</th><th>Mail?</th><th>Aktion</th></tr></thead>
+                <thead><tr><th>Datum & Uhrzeit</th><th>Beschreibung</th><th>Kunde</th><th>Mitarbeiter</th><th>Status</th><th>Aktion</th></tr></thead>
                 <tbody id="termineTable"></tbody>
             </table>
         </div>
@@ -121,7 +123,7 @@
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('dashboardSection').classList.remove('hidden');
             document.getElementById('userInfo').classList.remove('hidden');
-            document.getElementById('welcomeMsg').innerText = localStorage.getItem('user');
+            document.getElementById('welcomeMsg').innerText = localStorage.getItem('user') + " (" + localStorage.getItem('role') + ")";
             
             if(localStorage.getItem('role') === 'Admin') {
                 document.getElementById('adminArea').classList.remove('hidden');
@@ -133,6 +135,30 @@
             loadTermine();
         }
 
+        // --- INTELLIGENTE FEHLERBEHANDLUNG ---
+        async function handleError(response, msgElementId) {
+            const rawText = await response.text();
+            let errorMessage = rawText;
+            
+            // Versuchen, das JSON zu parsen
+            try {
+                const json = JSON.parse(rawText);
+                // Wenn es ein Feld "detail" gibt (Standard bei .NET ProblemDetails), nimm das
+                if (json.detail) errorMessage = json.detail;
+                else if (json.title) errorMessage = json.title;
+            } catch(e) {
+                // War kein JSON, wir nehmen den rohen Text
+            }
+            
+            alert("⚠️ " + errorMessage);
+            
+            if(msgElementId) {
+                const el = document.getElementById(msgElementId);
+                el.innerText = errorMessage;
+                el.className = "msg-error";
+            }
+        }
+
         async function loadTermine() {
             const res = await fetch('/termine', { headers: {'Authorization': 'Bearer '+localStorage.getItem('token')} });
             if(res.status===401) { logout(); return; }
@@ -140,12 +166,12 @@
             const tbody = document.getElementById('termineTable'); tbody.innerHTML = '';
             
             data.forEach(t => {
-                const mailStatus = t.erinnerungVerschickt ? '<span class="email-sent">Ja ✅</span>' : '<span class="email-wait">Nein ⏳</span>';
-                let btns = '-';
+                const mailStatus = t.erinnerungVerschickt ? '<span class="email-sent">Ja ✅</span>' : '<span class="email-wait">Geplant</span>';
+                let btns = '';
                 if(localStorage.getItem('role') === 'Admin') {
                     const json = JSON.stringify(t).replace(/"/g, '&quot;');
                     btns = `<button class="edit" onclick="editTermin(${json})">Edit</button>
-                            <button class="delete" onclick="deleteTermin(${t.id})">Del</button>`;
+                            <button class="delete" onclick="deleteTermin(${t.id})">Löschen</button>`;
                 }
                 tbody.innerHTML += `<tr><td>${new Date(t.datumUhrzeit).toLocaleString('de-DE')}</td><td>${t.beschreibung}</td><td>${t.kundeName}</td><td>${t.mitarbeiterName}</td><td>${mailStatus}</td><td>${btns}</td></tr>`;
             });
@@ -162,13 +188,13 @@
                     <td>${k.strasse || ''}, ${k.plz} ${k.stadt}</td>
                     <td>
                         <button class="edit" onclick="editKunde(${json})">Edit</button>
-                        <button class="delete" onclick="deleteKunde(${k.id})">Del</button>
+                        <button class="delete" onclick="deleteKunde(${k.id})">Löschen</button>
                     </td>
                 </tr>`;
             });
         }
         
-        // --- KUNDEN BEARBEITEN (NEU: Felder füllen) ---
+        // --- KUNDEN LOGIK ---
         function editKunde(k) {
             document.getElementById('lblKunde').innerText = "Kunde bearbeiten (ID: "+k.id+")";
             document.getElementById('btnKunde').innerText = "Speichern";
@@ -179,8 +205,6 @@
             document.getElementById('nk_Nach').value = k.nachname;
             document.getElementById('nk_Plz').value = k.plz;
             document.getElementById('nk_Stadt').value = k.stadt;
-            
-            // Jetzt werden auch diese Felder gefüllt!
             document.getElementById('nk_Strasse').value = k.strasse || '';
             document.getElementById('nk_Email').value = k.email || '';
             document.getElementById('nk_Tel').value = k.telefon || '';
@@ -194,6 +218,7 @@
             document.getElementById('nk_Vor').value = ''; document.getElementById('nk_Nach').value = '';
             document.getElementById('nk_Plz').value = ''; document.getElementById('nk_Stadt').value = '';
             document.getElementById('nk_Strasse').value = ''; document.getElementById('nk_Email').value = ''; document.getElementById('nk_Tel').value = '';
+            document.getElementById('msgKunde').innerText = '';
         }
 
         async function saveKunde() {
@@ -213,9 +238,12 @@
             try {
                 const res = await fetch(url, { method: method, headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+localStorage.getItem('token')}, body:JSON.stringify(body)});
                 if(res.ok) { 
-                    document.getElementById('msgKunde').innerText = "Gespeichert!"; 
+                    document.getElementById('msgKunde').innerText = "Kunde gespeichert!"; 
+                    document.getElementById('msgKunde').className = "msg-success";
                     resetKundeForm(); loadKundenTable(); loadDropdowns();
-                } else { alert(await res.text()); }
+                } else { 
+                    await handleError(res, 'msgKunde'); 
+                }
             } catch(e) { alert(e); }
         }
         
@@ -224,8 +252,8 @@
             await fetch('/kunden/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
             loadKundenTable(); loadDropdowns();
         }
-        
-        // ... (Restliche Funktionen) ...
+
+        // --- MITARBEITER LOGIK ---
         async function loadMitarbeiterTable() {
             const res = await fetch('/mitarbeiter');
             const data = await res.json();
@@ -234,11 +262,61 @@
                 const json = JSON.stringify(m).replace(/"/g, '&quot;');
                 tbody.innerHTML += `<tr><td>${m.username}</td><td>${m.vorname} ${m.nachname}</td><td>${m.rolle}</td><td>
                     <button class="edit" onclick="editMitarbeiter(${json})">Edit</button>
-                    <button class="delete" onclick="deleteMitarbeiter(${m.id})">Del</button>
+                    <button class="delete" onclick="deleteMitarbeiter(${m.id})">Löschen</button>
                 </td></tr>`;
             });
         }
         
+        function editMitarbeiter(m) {
+            document.getElementById('lblMA').innerText = "Bearbeiten (ID: " + m.id + ")";
+            document.getElementById('btnMA').innerText = "Speichern";
+            document.getElementById('btnCancelM').classList.remove('hidden');
+            document.getElementById('editM_Id').value = m.id;
+            document.getElementById('newM_User').value = m.username;
+            document.getElementById('newM_Vor').value = m.vorname;
+            document.getElementById('newM_Nach').value = m.nachname;
+            document.getElementById('newM_Rolle').value = m.rolle;
+        }
+
+        function resetMitarbeiterForm() {
+            document.getElementById('lblMA').innerText = "👷 Neuer Mitarbeiter";
+            document.getElementById('btnMA').innerText = "Mitarbeiter anlegen";
+            document.getElementById('btnCancelM').classList.add('hidden');
+            document.getElementById('editM_Id').value = '';
+            document.getElementById('newM_User').value = '';
+            document.getElementById('msgMitarbeiter').innerText = '';
+        }
+
+        async function saveMitarbeiter() {
+            const id = document.getElementById('editM_Id').value;
+            const body = {
+                username: document.getElementById('newM_User').value,
+                password: document.getElementById('newM_Pass').value,
+                vorname: document.getElementById('newM_Vor').value,
+                nachname: document.getElementById('newM_Nach').value,
+                rolle: document.getElementById('newM_Rolle').value
+            };
+            const url = id ? '/mitarbeiter/' + id : '/mitarbeiter';
+            const method = id ? 'PUT' : 'POST';
+            try {
+                const res = await fetch(url, { method: method, headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+localStorage.getItem('token')}, body:JSON.stringify(body)});
+                if(res.ok) { 
+                    document.getElementById('msgMitarbeiter').innerText = "Gespeichert!"; 
+                    document.getElementById('msgMitarbeiter').className = "msg-success";
+                    resetMitarbeiterForm(); loadMitarbeiterTable(); loadDropdowns();
+                } else { 
+                    await handleError(res, 'msgMitarbeiter');
+                }
+            } catch(e) { alert(e); }
+        }
+
+        async function deleteMitarbeiter(id) {
+            if(!confirm("Löschen?")) return;
+            await fetch('/mitarbeiter/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
+            loadMitarbeiterTable(); loadDropdowns();
+        }
+        
+        // --- TERMIN LOGIK ---
         async function loadDropdowns() {
             const [rk, rm] = await Promise.all([fetch('/kunden'), fetch('/mitarbeiter')]);
             const k = await rk.json(); const m = await rm.json();
@@ -265,6 +343,7 @@
             document.getElementById('btnCancelT').classList.add('hidden');
             document.getElementById('editT_Id').value = '';
             document.getElementById('newT_Desc').value = '';
+            document.getElementById('msgTermin').innerText = '';
         }
 
         async function saveTermin() {
@@ -281,48 +360,13 @@
             try {
                 const res = await fetch(url, { method: method, headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+localStorage.getItem('token')}, body:JSON.stringify(body)});
                 if(res.ok) { 
-                    document.getElementById('msgTermin').innerText = "Gespeichert!"; 
+                    document.getElementById('msgTermin').innerText = "Termin erfolgreich gebucht!"; 
+                    document.getElementById('msgTermin').className = "msg-success";
                     resetTerminForm(); loadTermine(); 
-                } else { alert(await res.text()); }
-            } catch(e) { alert(e); }
-        }
-
-        function editMitarbeiter(m) {
-            document.getElementById('lblMA').innerText = "Bearbeiten (ID: " + m.id + ")";
-            document.getElementById('btnMA').innerText = "Speichern";
-            document.getElementById('btnCancelM').classList.remove('hidden');
-            document.getElementById('editM_Id').value = m.id;
-            document.getElementById('newM_User').value = m.username;
-            document.getElementById('newM_Vor').value = m.vorname;
-            document.getElementById('newM_Nach').value = m.nachname;
-            document.getElementById('newM_Rolle').value = m.rolle;
-        }
-
-        function resetMitarbeiterForm() {
-            document.getElementById('lblMA').innerText = "👷 Neuer Mitarbeiter";
-            document.getElementById('btnMA').innerText = "Anlegen";
-            document.getElementById('btnCancelM').classList.add('hidden');
-            document.getElementById('editM_Id').value = '';
-            document.getElementById('newM_User').value = '';
-        }
-
-        async function saveMitarbeiter() {
-            const id = document.getElementById('editM_Id').value;
-            const body = {
-                username: document.getElementById('newM_User').value,
-                password: document.getElementById('newM_Pass').value,
-                vorname: document.getElementById('newM_Vor').value,
-                nachname: document.getElementById('newM_Nach').value,
-                rolle: document.getElementById('newM_Rolle').value
-            };
-            const url = id ? '/mitarbeiter/' + id : '/mitarbeiter';
-            const method = id ? 'PUT' : 'POST';
-            try {
-                const res = await fetch(url, { method: method, headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+localStorage.getItem('token')}, body:JSON.stringify(body)});
-                if(res.ok) { 
-                    document.getElementById('msgMitarbeiter').innerText = "Gespeichert!"; 
-                    resetMitarbeiterForm(); loadMitarbeiterTable(); loadDropdowns();
-                } else { alert(await res.text()); }
+                } else { 
+                    // HIER RUFEN WIR DIE NEUE FUNKTION AUF:
+                    await handleError(res, 'msgTermin');
+                }
             } catch(e) { alert(e); }
         }
 
@@ -330,11 +374,6 @@
             if(!confirm("Löschen?")) return;
             await fetch('/termine/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
             loadTermine();
-        }
-        async function deleteMitarbeiter(id) {
-            if(!confirm("Löschen?")) return;
-            await fetch('/mitarbeiter/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
-            loadMitarbeiterTable(); loadDropdowns();
         }
     </script>
 </body>
