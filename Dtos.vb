@@ -41,6 +41,7 @@ End Class
 ' --- TERMINE ---
 Public Class CreateTerminDto
     Public Property DatumUhrzeit As DateTime
+    Public Property Endzeit As DateTime
     Public Property Beschreibung As String
     Public Property KundeId As Integer
     Public Property MitarbeiterId As Integer
@@ -49,11 +50,12 @@ End Class
 Public Class TerminResponseDto
     Public Property Id As Integer
     Public Property DatumUhrzeit As DateTime
+    Public Property Endzeit As DateTime
     Public Property Beschreibung As String
     Public Property Status As String
     Public Property KundeName As String
     Public Property MitarbeiterName As String
-    Public Property ErinnerungVerschickt As Boolean 
+    Public Property ErinnerungVerschickt As Boolean
 End Class
 
 ' --- LOGIN ---

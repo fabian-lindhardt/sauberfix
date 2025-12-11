@@ -6,9 +6,6 @@ Imports System
 Namespace Services
     Public Class TerminService
         Private ReadOnly _db As AppDbContext
-        
-        ' Ein Termin dauert pauschal 60 Minuten
-        Private Const TERMIN_DAUER_MINUTEN As Integer = 60
 
         Public Sub New(db As AppDbContext)
             _db = db
@@ -22,10 +19,11 @@ Namespace Services
                 Throw New ArgumentException("Kunde oder Mitarbeiter nicht gefunden.")
             End If
 
-            CheckKollision(input.MitarbeiterId, input.DatumUhrzeit, Nothing)
+            CheckKollision(input.MitarbeiterId, input.DatumUhrzeit, input.Endzeit, Nothing)
 
             Dim termin As New Termin() With {
                 .DatumUhrzeit = input.DatumUhrzeit,
+                .Endzeit = input.Endzeit,
                 .Beschreibung = input.Beschreibung,
                 .KundeId = input.KundeId,
                 .MitarbeiterId = input.MitarbeiterId,
@@ -42,13 +40,14 @@ Namespace Services
             Dim t = _db.Termine.Find(id)
             If t Is Nothing Then Throw New ArgumentException("Termin nicht gefunden")
 
-            CheckKollision(input.MitarbeiterId, input.DatumUhrzeit, id)
+            CheckKollision(input.MitarbeiterId, input.DatumUhrzeit, input.Endzeit, id)
 
             t.DatumUhrzeit = input.DatumUhrzeit
+            t.Endzeit = input.Endzeit
             t.Beschreibung = input.Beschreibung
             t.KundeId = input.KundeId
             t.MitarbeiterId = input.MitarbeiterId
-            
+
             _db.SaveChanges()
             Return GetOne(t.Id)
         End Function
@@ -73,9 +72,7 @@ Namespace Services
             End If
         End Sub
 
-        Private Sub CheckKollision(mitarbeiterId As Integer, startNeu As DateTime, ignoreTerminId As Integer?)
-            Dim endeNeu = startNeu.AddMinutes(TERMIN_DAUER_MINUTEN)
-            
+        Private Sub CheckKollision(mitarbeiterId As Integer, startNeu As DateTime, endeNeu As DateTime, ignoreTerminId As Integer?)
             Dim query = _db.Termine.Where(Function(t) t.MitarbeiterId = mitarbeiterId AndAlso t.Status <> TerminStatus.Storniert)
 
             If ignoreTerminId.HasValue Then
@@ -86,10 +83,9 @@ Namespace Services
 
             For Each t In existierendeTermine
                 Dim startAlt = t.DatumUhrzeit
-                Dim endeAlt = t.DatumUhrzeit.AddMinutes(TERMIN_DAUER_MINUTEN)
+                Dim endeAlt = t.Endzeit
 
                 If startNeu < endeAlt AndAlso endeNeu > startAlt Then
-                    ' --- HIER IST DIE ÄNDERUNG: .ToString("HH:mm") erzwingt 24h Format ---
                     Throw New ArgumentException($"Kollision! Der Mitarbeiter hat bereits einen Termin von {startAlt.ToString("HH:mm")} bis {endeAlt.ToString("HH:mm")}.")
                 End If
             Next
@@ -102,7 +98,7 @@ Namespace Services
 
         Private Function MapToDto(t As Termin) As TerminResponseDto
             Return New TerminResponseDto() With {
-                .Id = t.Id, .DatumUhrzeit = t.DatumUhrzeit, .Beschreibung = t.Beschreibung, .Status = t.Status.ToString(),
+                .Id = t.Id, .DatumUhrzeit = t.DatumUhrzeit, .Endzeit = t.Endzeit, .Beschreibung = t.Beschreibung, .Status = t.Status.ToString(),
                 .KundeName = If(t.Kunde IsNot Nothing, t.Kunde.Vorname & " " & t.Kunde.Nachname, "?"),
                 .MitarbeiterName = If(t.Mitarbeiter IsNot Nothing, t.Mitarbeiter.Vorname & " " & t.Mitarbeiter.Nachname, "?"),
                 .ErinnerungVerschickt = t.ErinnerungVerschickt

@@ -62,12 +62,13 @@
 
                 <div class="card">
                     <h3 id="lblTermin">📅 Neuer Termin</h3>
-                    <input type="hidden" id="editT_Id" /> 
-                    <label>Wann?</label><input type="datetime-local" id="newT_Datum" />
+                    <input type="hidden" id="editT_Id" />
+                    <label>Start</label><input type="datetime-local" id="newT_Datum" />
+                    <label>Ende</label><input type="datetime-local" id="newT_Ende" />
                     <label>Was?</label><input type="text" id="newT_Desc" placeholder="Beschreibung" />
                     <label>Bei wem?</label><select id="newT_Kunde"></select>
                     <label>Wer macht's?</label><select id="newT_MA"></select>
-                    
+
                     <button id="btnTermin" onclick="saveTermin()">Termin buchen</button>
                     <button id="btnCancelT" onclick="resetTerminForm()" class="secondary hidden">Abbrechen</button>
                     <p id="msgTermin"></p>
@@ -336,7 +337,8 @@
             document.getElementById('btnCancelT').classList.remove('hidden');
             document.getElementById('editT_Id').value = t.id;
             document.getElementById('newT_Desc').value = t.beschreibung;
-            document.getElementById('newT_Datum').value = t.datumUhrzeit; 
+            document.getElementById('newT_Datum').value = t.datumUhrzeit;
+            document.getElementById('newT_Ende').value = t.endzeit;
         }
 
         function resetTerminForm() {
@@ -345,6 +347,8 @@
             document.getElementById('btnCancelT').classList.add('hidden');
             document.getElementById('editT_Id').value = '';
             document.getElementById('newT_Desc').value = '';
+            document.getElementById('newT_Datum').value = '';
+            document.getElementById('newT_Ende').value = '';
             document.getElementById('msgTermin').innerText = '';
         }
 
@@ -352,6 +356,7 @@
             const id = document.getElementById('editT_Id').value;
             const body = {
                 datumUhrzeit: document.getElementById('newT_Datum').value,
+                endzeit: document.getElementById('newT_Ende').value,
                 beschreibung: document.getElementById('newT_Desc').value,
                 kundeId: parseInt(document.getElementById('newT_Kunde').value),
                 mitarbeiterId: parseInt(document.getElementById('newT_MA').value)

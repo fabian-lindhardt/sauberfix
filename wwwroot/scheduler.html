@@ -195,8 +195,13 @@
                 <input type="hidden" id="eventId" />
 
                 <div class="form-group">
-                    <label>Datum & Uhrzeit</label>
+                    <label>Start</label>
                     <input type="datetime-local" id="eventDate" required />
+                </div>
+
+                <div class="form-group">
+                    <label>Ende</label>
+                    <input type="datetime-local" id="eventEndDate" required />
                 </div>
 
                 <div class="form-group">
@@ -355,7 +360,7 @@
                     resourceId: t.mitarbeiterId ? t.mitarbeiterId.toString() : null,
                     title: t.kundeName + ' - ' + t.beschreibung,
                     start: t.datumUhrzeit,
-                    end: new Date(new Date(t.datumUhrzeit).getTime() + 60 * 60 * 1000), // 60 minutes
+                    end: t.endzeit,
                     backgroundColor: t.erinnerungVerschickt ? '#28a745' : '#007bff',
                     borderColor: t.erinnerungVerschickt ? '#28a745' : '#007bff',
                     extendedProps: {
@@ -380,6 +385,7 @@
             // Populate form
             document.getElementById('eventId').value = event.id;
             document.getElementById('eventDate').value = formatDateForInput(event.start);
+            document.getElementById('eventEndDate').value = formatDateForInput(event.end);
             document.getElementById('eventDesc').value = event.extendedProps.beschreibung;
 
             // Load dropdowns
@@ -400,6 +406,7 @@
 
             document.getElementById('eventId').value = '';
             document.getElementById('eventDate').value = formatDateForInput(info.start);
+            document.getElementById('eventEndDate').value = formatDateForInput(info.end);
 
             await loadDropdowns();
 
@@ -447,6 +454,7 @@
             const id = document.getElementById('eventId').value;
             const body = {
                 datumUhrzeit: document.getElementById('eventDate').value,
+                endzeit: document.getElementById('eventEndDate').value,
                 beschreibung: document.getElementById('eventDesc').value,
                 kundeId: parseInt(document.getElementById('eventKunde').value),
                 mitarbeiterId: parseInt(document.getElementById('eventMitarbeiter').value)
@@ -505,6 +513,7 @@
         async function updateEventTime(event) {
             const body = {
                 datumUhrzeit: event.start.toISOString(),
+                endzeit: event.end.toISOString(),
                 beschreibung: event.extendedProps.beschreibung,
                 kundeId: event.extendedProps.kundeId,
                 mitarbeiterId: parseInt(event.getResources()[0]?.id || 0)

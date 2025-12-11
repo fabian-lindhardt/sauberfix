@@ -14,6 +14,7 @@ namespace Sauberfix.Data
     {
         public int Id { get; set; }
         public DateTime DatumUhrzeit { get; set; }
+        public DateTime Endzeit { get; set; }
         public string Beschreibung { get; set; } = string.Empty;
         public TerminStatus Status { get; set; } = TerminStatus.Geplant;
 
