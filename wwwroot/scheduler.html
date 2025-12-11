@@ -354,25 +354,32 @@
                 }
 
                 const termine = await res.json();
+                console.log('Loaded termine:', termine);
 
-                const events = termine.map(t => ({
-                    id: t.id.toString(),
-                    resourceId: t.mitarbeiterId ? t.mitarbeiterId.toString() : null,
-                    title: t.kundeName + ' - ' + t.beschreibung,
-                    start: t.datumUhrzeit,
-                    end: t.endzeit,
-                    backgroundColor: t.erinnerungVerschickt ? '#28a745' : '#007bff',
-                    borderColor: t.erinnerungVerschickt ? '#28a745' : '#007bff',
-                    extendedProps: {
-                        kundeId: t.kundeId,
-                        beschreibung: t.beschreibung,
-                        status: t.status,
-                        erinnerungVerschickt: t.erinnerungVerschickt
-                    }
-                }));
+                const events = termine.map(t => {
+                    console.log('Processing termin:', t);
+                    return {
+                        id: t.id.toString(),
+                        resourceId: t.mitarbeiterId ? t.mitarbeiterId.toString() : null,
+                        title: t.kundeName + ' - ' + t.beschreibung,
+                        start: t.datumUhrzeit,
+                        end: t.endzeit,
+                        backgroundColor: t.erinnerungVerschickt ? '#28a745' : '#007bff',
+                        borderColor: t.erinnerungVerschickt ? '#28a745' : '#007bff',
+                        extendedProps: {
+                            kundeId: t.kundeId,
+                            beschreibung: t.beschreibung,
+                            status: t.status,
+                            erinnerungVerschickt: t.erinnerungVerschickt,
+                            mitarbeiterId: t.mitarbeiterId
+                        }
+                    };
+                });
 
+                console.log('Mapped events:', events);
                 successCallback(events);
             } catch (error) {
+                console.error('Error loading events:', error);
                 failureCallback(error);
             }
         }
