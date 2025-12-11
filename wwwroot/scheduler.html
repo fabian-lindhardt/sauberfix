@@ -358,10 +358,12 @@
 
                 const events = termine.map(t => {
                     console.log('Processing termin:', t);
+                    // Wenn Kunde eine Firma hat, zeige Firmenname, sonst den Namen
+                    const kundeDisplay = (t.kundeFirma && t.kundeFirma.trim() !== '') ? t.kundeFirma : t.kundeName;
                     return {
                         id: t.id.toString(),
                         resourceId: t.mitarbeiterId ? t.mitarbeiterId.toString() : null,
-                        title: t.kundeName + ' - ' + t.beschreibung,
+                        title: kundeDisplay + ' - ' + t.beschreibung,
                         start: t.datumUhrzeit,
                         end: t.endzeit,
                         backgroundColor: t.erinnerungVerschickt ? '#28a745' : '#007bff',
@@ -442,7 +444,14 @@
             const selK = document.getElementById('eventKunde');
             selK.innerHTML = '';
             kunden.forEach(k => {
-                selK.innerHTML += `<option value="${k.id}">${k.nachname}, ${k.vorname}</option>`;
+                // Wenn Kunde eine Firma hat, zeige Firmenname zuerst, dann den Namen
+                let kundeDisplay;
+                if (k.firma && k.firma.trim() !== '') {
+                    kundeDisplay = `${k.firma} (${k.nachname}, ${k.vorname})`;
+                } else {
+                    kundeDisplay = `${k.nachname}, ${k.vorname}`;
+                }
+                selK.innerHTML += `<option value="${k.id}">${kundeDisplay}</option>`;
             });
 
             const selM = document.getElementById('eventMitarbeiter');

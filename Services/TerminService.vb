@@ -105,6 +105,7 @@ Namespace Services
                 .Status = t.Status.ToString(),
                 .KundeId = t.KundeId,
                 .KundeName = If(t.Kunde IsNot Nothing, t.Kunde.Vorname & " " & t.Kunde.Nachname, "?"),
+                .KundeFirma = If(t.Kunde IsNot Nothing, t.Kunde.Firma, ""),
                 .MitarbeiterId = t.MitarbeiterId,
                 .MitarbeiterName = If(t.Mitarbeiter IsNot Nothing, t.Mitarbeiter.Vorname & " " & t.Mitarbeiter.Nachname, "?"),
                 .ErinnerungVerschickt = t.ErinnerungVerschickt

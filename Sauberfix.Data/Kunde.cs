@@ -13,6 +13,8 @@ namespace Sauberfix.Data
         [Required]
         public string Nachname { get; set; } = string.Empty;
 
+        public string Firma { get; set; } = string.Empty;
+
         public string Strasse { get; set; } = string.Empty;
         
         // --- ÄNDERUNG START (3. Normalform) ---

@@ -2,8 +2,9 @@
 Public Class CreateKundeDto
     Public Property Vorname As String
     Public Property Nachname As String
+    Public Property Firma As String
     Public Property Strasse As String
-    Public Property Plz As String 
+    Public Property Plz As String
     Public Property Stadt As String
     Public Property Email As String
     Public Property Telefon As String
@@ -13,6 +14,7 @@ Public Class KundeResponseDto
     Public Property Id As Integer
     Public Property Vorname As String
     Public Property Nachname As String
+    Public Property Firma As String
     Public Property Plz As String
     Public Property Stadt As String
     ' --- NEU HINZUGEFÜGT ---
@@ -55,6 +57,7 @@ Public Class TerminResponseDto
     Public Property Status As String
     Public Property KundeId As Integer
     Public Property KundeName As String
+    Public Property KundeFirma As String
     Public Property MitarbeiterId As Integer?
     Public Property MitarbeiterName As String
     Public Property ErinnerungVerschickt As Boolean

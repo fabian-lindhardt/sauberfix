@@ -51,6 +51,7 @@
                     <h3 id="lblKunde">👥 Neuer Kunde</h3>
                     <input type="hidden" id="editK_Id" />
                     <div style="display:flex; gap:5px;"><input type="text" id="nk_Vor" placeholder="Vorname" /><input type="text" id="nk_Nach" placeholder="Nachname" /></div>
+                    <input type="text" id="nk_Firma" placeholder="Firma (optional)" />
                     <input type="text" id="nk_Strasse" placeholder="Straße & Hausnr." />
                     <div style="display:flex; gap:5px;"><input type="text" id="nk_Plz" placeholder="PLZ" style="width:80px;" /><input type="text" id="nk_Stadt" placeholder="Stadt" /></div>
                     <input type="email" id="nk_Email" placeholder="E-Mail Adresse" /><input type="text" id="nk_Tel" placeholder="Telefonnummer" />
@@ -90,14 +91,14 @@
             
             <div class="card" style="margin-bottom:1rem;">
                 <h3>Kunden Übersicht</h3>
-                <table><thead><tr><th>Name</th><th>Adresse</th><th>Aktion</th></tr></thead><tbody id="kundenTable"></tbody></table>
+                <table><thead><tr><th>Kunde</th><th>Adresse</th><th>Email</th><th>Telefon</th><th>Aktion</th></tr></thead><tbody id="kundenTable"></tbody></table>
             </div>
         </div>
 
         <div class="card">
             <div style="display:flex; justify-content:space-between;"><h3>Aktuelle Termine</h3><button onclick="loadTermine()" style="width:auto;">🔄 Aktualisieren</button></div>
             <table>
-                <thead><tr><th>Datum & Uhrzeit</th><th>Beschreibung</th><th>Kunde</th><th>Mitarbeiter</th><th>Status</th><th>Aktion</th></tr></thead>
+                <thead><tr><th>Start</th><th>Ende</th><th>Beschreibung</th><th>Kunde</th><th>Mitarbeiter</th><th>Status</th><th>Aktion</th></tr></thead>
                 <tbody id="termineTable"></tbody>
             </table>
         </div>
@@ -167,16 +168,16 @@
             if(res.status===401) { logout(); return; }
             const data = await res.json();
             const tbody = document.getElementById('termineTable'); tbody.innerHTML = '';
-            
+            window.termineData = data; // Store data globally for edit
+
             data.forEach(t => {
                 const mailStatus = t.erinnerungVerschickt ? '<span class="email-sent">Ja ✅</span>' : '<span class="email-wait">Geplant</span>';
                 let btns = '';
                 if(localStorage.getItem('role') === 'Admin') {
-                    const json = JSON.stringify(t).replace(/"/g, '&quot;');
-                    btns = `<button class="edit" onclick="editTermin(${json})">Edit</button>
+                    btns = `<button class="edit" onclick="editTerminById(${t.id})">Edit</button>
                             <button class="delete" onclick="deleteTermin(${t.id})">Löschen</button>`;
                 }
-                tbody.innerHTML += `<tr><td>${new Date(t.datumUhrzeit).toLocaleString('de-DE')}</td><td>${t.beschreibung}</td><td>${t.kundeName}</td><td>${t.mitarbeiterName}</td><td>${mailStatus}</td><td>${btns}</td></tr>`;
+                tbody.innerHTML += `<tr><td>${new Date(t.datumUhrzeit).toLocaleString('de-DE')}</td><td>${new Date(t.endzeit).toLocaleString('de-DE')}</td><td>${t.beschreibung}</td><td>${t.kundeName}</td><td>${t.mitarbeiterName}</td><td>${mailStatus}</td><td>${btns}</td></tr>`;
             });
         }
         
@@ -184,13 +185,22 @@
             const res = await fetch('/kunden');
             const data = await res.json();
             const tbody = document.getElementById('kundenTable'); tbody.innerHTML = '';
+            window.kundenData = data; // Store data globally for edit
             data.forEach(k => {
-                const json = JSON.stringify(k).replace(/"/g, '&quot;');
+                let kundeDisplay = '';
+                if (k.firma && k.firma.trim() !== '') {
+                    kundeDisplay = `<strong>${k.firma}</strong><br><small>${k.vorname} ${k.nachname}</small>`;
+                } else {
+                    kundeDisplay = `<strong>${k.vorname} ${k.nachname}</strong>`;
+                }
+                const emailDisplay = k.email ? `<a href="mailto:${k.email}">${k.email}</a>` : '-';
                 tbody.innerHTML += `<tr>
-                    <td>${k.vorname} ${k.nachname}</td>
+                    <td>${kundeDisplay}</td>
                     <td>${k.strasse || ''}, ${k.plz} ${k.stadt}</td>
+                    <td>${emailDisplay}</td>
+                    <td>${k.telefon || '-'}</td>
                     <td>
-                        <button class="edit" onclick="editKunde(${json})">Edit</button>
+                        <button class="edit" onclick="editKundeById(${k.id})">Edit</button>
                         <button class="delete" onclick="deleteKunde(${k.id})">Löschen</button>
                     </td>
                 </tr>`;
@@ -198,14 +208,20 @@
         }
         
         // --- KUNDEN LOGIK ---
+        function editKundeById(id) {
+            const k = window.kundenData.find(kunde => kunde.id === id);
+            if (k) editKunde(k);
+        }
+
         function editKunde(k) {
             document.getElementById('lblKunde').innerText = "Kunde bearbeiten (ID: "+k.id+")";
             document.getElementById('btnKunde').innerText = "Speichern";
             document.getElementById('btnCancelK').classList.remove('hidden');
             document.getElementById('editK_Id').value = k.id;
-            
+
             document.getElementById('nk_Vor').value = k.vorname;
             document.getElementById('nk_Nach').value = k.nachname;
+            document.getElementById('nk_Firma').value = k.firma || '';
             document.getElementById('nk_Plz').value = k.plz;
             document.getElementById('nk_Stadt').value = k.stadt;
             document.getElementById('nk_Strasse').value = k.strasse || '';
@@ -219,6 +235,7 @@
             document.getElementById('btnCancelK').classList.add('hidden');
             document.getElementById('editK_Id').value = '';
             document.getElementById('nk_Vor').value = ''; document.getElementById('nk_Nach').value = '';
+            document.getElementById('nk_Firma').value = '';
             document.getElementById('nk_Plz').value = ''; document.getElementById('nk_Stadt').value = '';
             document.getElementById('nk_Strasse').value = ''; document.getElementById('nk_Email').value = ''; document.getElementById('nk_Tel').value = '';
             document.getElementById('msgKunde').innerText = '';
@@ -229,6 +246,7 @@
             const body = {
                 vorname: document.getElementById('nk_Vor').value,
                 nachname: document.getElementById('nk_Nach').value,
+                firma: document.getElementById('nk_Firma').value,
                 strasse: document.getElementById('nk_Strasse').value,
                 plz: document.getElementById('nk_Plz').value,
                 stadt: document.getElementById('nk_Stadt').value,
@@ -261,15 +279,20 @@
             const res = await fetch('/mitarbeiter');
             const data = await res.json();
             const tbody = document.getElementById('maTable'); tbody.innerHTML = '';
+            window.mitarbeiterData = data; // Store data globally for edit
             data.forEach(m => {
-                const json = JSON.stringify(m).replace(/"/g, '&quot;');
                 tbody.innerHTML += `<tr><td>${m.username}</td><td>${m.vorname} ${m.nachname}</td><td>${m.rolle}</td><td>
-                    <button class="edit" onclick="editMitarbeiter(${json})">Edit</button>
+                    <button class="edit" onclick="editMitarbeiterById(${m.id})">Edit</button>
                     <button class="delete" onclick="deleteMitarbeiter(${m.id})">Löschen</button>
                 </td></tr>`;
             });
         }
-        
+
+        function editMitarbeiterById(id) {
+            const m = window.mitarbeiterData.find(mitarbeiter => mitarbeiter.id === id);
+            if (m) editMitarbeiter(m);
+        }
+
         function editMitarbeiter(m) {
             document.getElementById('lblMA').innerText = "Bearbeiten (ID: " + m.id + ")";
             document.getElementById('btnMA').innerText = "Speichern";
@@ -323,14 +346,39 @@
         async function loadDropdowns() {
             const [rk, rm] = await Promise.all([fetch('/kunden'), fetch('/mitarbeiter')]);
             const k = await rk.json(); const m = await rm.json();
-            
+
             const selK = document.getElementById('newT_Kunde'); selK.innerHTML = '';
             k.forEach(x => selK.innerHTML += `<option value="${x.id}">${x.nachname}, ${x.vorname}</option>`);
-            
+
             const selM = document.getElementById('newT_MA'); selM.innerHTML = '';
             m.forEach(x => selM.innerHTML += `<option value="${x.id}">${x.username}</option>`);
         }
-        
+
+        // Auto-set end time to 30 minutes after start time
+        document.getElementById('newT_Datum').addEventListener('change', function() {
+            const startInput = document.getElementById('newT_Datum');
+            const endInput = document.getElementById('newT_Ende');
+
+            if (startInput.value && !endInput.value) {
+                const startDate = new Date(startInput.value);
+                startDate.setMinutes(startDate.getMinutes() + 30);
+
+                // Format to datetime-local format (YYYY-MM-DDTHH:mm)
+                const year = startDate.getFullYear();
+                const month = String(startDate.getMonth() + 1).padStart(2, '0');
+                const day = String(startDate.getDate()).padStart(2, '0');
+                const hours = String(startDate.getHours()).padStart(2, '0');
+                const minutes = String(startDate.getMinutes()).padStart(2, '0');
+
+                endInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+            }
+        });
+
+        function editTerminById(id) {
+            const t = window.termineData.find(termin => termin.id === id);
+            if (t) editTermin(t);
+        }
+
         function editTermin(t) {
             document.getElementById('lblTermin').innerText = "Termin bearbeiten (ID: " + t.id + ")";
             document.getElementById('btnTermin').innerText = "Speichern";

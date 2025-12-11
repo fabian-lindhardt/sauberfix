@@ -14,10 +14,11 @@ Namespace Services
             Dim ort = GetOrCreateOrt(input.Plz, input.Stadt)
             
             Dim k As New Kunde() With {
-                .Vorname = input.Vorname, 
+                .Vorname = input.Vorname,
                 .Nachname = input.Nachname,
-                .Strasse = input.Strasse, 
-                .Email = input.Email, 
+                .Firma = input.Firma,
+                .Strasse = input.Strasse,
+                .Email = input.Email,
                 .Telefon = input.Telefon,
                 .Ort = ort
             }
@@ -36,6 +37,7 @@ Namespace Services
 
             k.Vorname = input.Vorname
             k.Nachname = input.Nachname
+            k.Firma = input.Firma
             k.Strasse = input.Strasse
             k.Email = input.Email
             k.Telefon = input.Telefon
@@ -73,10 +75,11 @@ Namespace Services
 
         Private Shared Function MapToDto(k As Kunde) As KundeResponseDto
             Return New KundeResponseDto() With {
-                .Id = k.Id, 
-                .Vorname = k.Vorname, 
+                .Id = k.Id,
+                .Vorname = k.Vorname,
                 .Nachname = k.Nachname,
-                .Plz = If(k.Ort IsNot Nothing, k.Ort.Plz, ""), 
+                .Firma = k.Firma,
+                .Plz = If(k.Ort IsNot Nothing, k.Ort.Plz, ""),
                 .Stadt = If(k.Ort IsNot Nothing, k.Ort.StadtName, ""),
                 .Strasse = k.Strasse,
                 .Email = k.Email,
