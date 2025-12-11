@@ -132,6 +132,12 @@ Module Program
         End Function).RequireAuthorization()
 
 
+        Using scope = app.Services.CreateScope()
+            Dim db = scope.ServiceProvider.GetRequiredService(Of AppDbContext)()
+            db.Database.Migrate()
+            DatabaseSeeder.SeedDatabase(db)
+        End Using
+
         app.Run()
     End Sub
 End Module
