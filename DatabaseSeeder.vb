@@ -6,7 +6,10 @@ Imports Microsoft.EntityFrameworkCore
 Public Class DatabaseSeeder
     Public Shared Sub SeedDatabase(db As AppDbContext)
         Console.WriteLine(">>> Checking if database needs seeding...")
-        
+
+        ' Fix Endzeit for existing appointments
+        FixEndzeitForExistingAppointments(db)
+
         If db.Mitarbeiter.Any() Then
             Console.WriteLine(">>> Database already contains users. Skipping seed.")
             Return
@@ -35,5 +38,20 @@ Public Class DatabaseSeeder
         Console.WriteLine(">>> SUCCESS: Admin user created!")
         Console.WriteLine(">>>   Username: admin")
         Console.WriteLine(">>>   Password: admin123")
+    End Sub
+
+    Private Shared Sub FixEndzeitForExistingAppointments(db As AppDbContext)
+        Dim invalidTermine = db.Termine.Where(Function(t) t.Endzeit < t.DatumUhrzeit Or t.Endzeit = New DateTime(1, 1, 1)).ToList()
+
+        If invalidTermine.Count > 0 Then
+            Console.WriteLine($">>> Fixing Endzeit for {invalidTermine.Count} appointments...")
+
+            For Each termin In invalidTermine
+                termin.Endzeit = termin.DatumUhrzeit.AddMinutes(60)
+            Next
+
+            db.SaveChanges()
+            Console.WriteLine(">>> Endzeit fixed for all appointments!")
+        End If
     End Sub
 End Class

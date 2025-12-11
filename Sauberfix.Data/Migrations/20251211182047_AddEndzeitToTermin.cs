@@ -17,6 +17,12 @@ namespace Sauberfix.Data.Migrations
                 type: "timestamp without time zone",
                 nullable: false,
                 defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
+
+            // Update existing records to set Endzeit = DatumUhrzeit + 60 minutes
+            migrationBuilder.Sql(
+                @"UPDATE ""Termine""
+                  SET ""Endzeit"" = ""DatumUhrzeit"" + INTERVAL '60 minutes'
+                  WHERE ""Endzeit"" = '0001-01-01 00:00:00'");
         }
 
         /// <inheritdoc />
