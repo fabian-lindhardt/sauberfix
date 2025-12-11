@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SauberFix Terminplaner</title>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar-scheduler@6.1.19/index.global.min.js'></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f9;
+        }
+        .header {
+            background: white;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            margin: 0;
+            color: #0056b3;
+            font-size: 24px;
+        }
+        .user-info {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        #calendar {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            height: calc(100vh - 150px);
+        }
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .login-container h2 {
+            margin-top: 0;
+            color: #0056b3;
+        }
+        .login-container input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .hidden { display: none; }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-header h2 {
+            margin: 0;
+            color: #0056b3;
+        }
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: #000;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-delete:hover {
+            background: #c82333;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .modal-actions button {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Section -->
+    <div id="loginSection">
+        <div class="login-container">
+            <h2>🧹 SauberFix Login</h2>
+            <input type="text" id="loginUser" placeholder="Benutzername" />
+            <input type="password" id="loginPass" placeholder="Passwort" />
+            <button class="btn-primary" style="width: 100%;" onclick="login()">Anmelden</button>
+        </div>
+    </div>
+
+    <!-- Main App Section -->
+    <div id="appSection" class="hidden">
+        <div class="header">
+            <h1>🧹 SauberFix Terminplaner</h1>
+            <div class="user-info">
+                <span id="welcomeMsg"></span>
+                <button class="btn-primary" onclick="window.location.href='index.html'">Tabelle</button>
+                <button class="btn-secondary" onclick="logout()">Abmelden</button>
+            </div>
+        </div>
+        <div id="calendar"></div>
+    </div>
+
+    <!-- Event Edit Modal -->
+    <div id="eventModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Termin bearbeiten</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <form id="eventForm">
+                <input type="hidden" id="eventId" />
+
+                <div class="form-group">
+                    <label>Datum & Uhrzeit</label>
+                    <input type="datetime-local" id="eventDate" required />
+                </div>
+
+                <div class="form-group">
+                    <label>Beschreibung</label>
+                    <textarea id="eventDesc" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Kunde</label>
+                    <select id="eventKunde" required></select>
+                </div>
+
+                <div class="form-group">
+                    <label>Mitarbeiter</label>
+                    <select id="eventMitarbeiter" required></select>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary">Speichern</button>
+                    <button type="button" class="btn-secondary" onclick="closeModal()">Abbrechen</button>
+                    <button type="button" id="btnDelete" class="btn-delete hidden" onclick="deleteEvent()">Löschen</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let calendar;
+        let currentEvent = null;
+
+        // Check if already logged in
+        if (localStorage.getItem('token')) {
+            showApp();
+        }
+
+        async function login() {
+            try {
+                const res = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: document.getElementById('loginUser').value,
+                        password: document.getElementById('loginPass').value
+                    })
+                });
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('role', data.rolle);
+                localStorage.setItem('user', data.username);
+                showApp();
+            } catch {
+                alert("Login fehlgeschlagen");
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            location.reload();
+        }
+
+        async function showApp() {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('appSection').classList.remove('hidden');
+            document.getElementById('welcomeMsg').innerText =
+                localStorage.getItem('user') + " (" + localStorage.getItem('role') + ")";
+
+            await initCalendar();
+        }
+
+        async function initCalendar() {
+            const calendarEl = document.getElementById('calendar');
+
+            // Load resources (Mitarbeiter)
+            const resources = await loadResources();
+
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives',
+                initialView: 'resourceTimelineWeek',
+                locale: 'de',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'resourceTimelineDay,resourceTimelineWeek,resourceTimelineMonth'
+                },
+                buttonText: {
+                    today: 'Heute',
+                    day: 'Tag',
+                    week: 'Woche',
+                    month: 'Monat'
+                },
+                slotMinTime: '07:00:00',
+                slotMaxTime: '20:00:00',
+                slotDuration: '00:30:00',
+                resourceAreaHeaderContent: 'Mitarbeiter',
+                resources: resources,
+                events: loadEvents,
+                editable: localStorage.getItem('role') === 'Admin',
+                selectable: localStorage.getItem('role') === 'Admin',
+                selectMirror: true,
+                dayMaxEvents: true,
+
+                // Event click - edit existing event
+                eventClick: function(info) {
+                    if (localStorage.getItem('role') === 'Admin') {
+                        openEditModal(info.event);
+                    }
+                },
+
+                // Select time slot - create new event
+                select: function(info) {
+                    if (localStorage.getItem('role') === 'Admin') {
+                        openNewEventModal(info);
+                    }
+                },
+
+                // Drag and drop
+                eventDrop: async function(info) {
+                    await updateEventTime(info.event);
+                },
+
+                // Resize
+                eventResize: async function(info) {
+                    await updateEventTime(info.event);
+                }
+            });
+
+            calendar.render();
+        }
+
+        async function loadResources() {
+            const res = await fetch('/mitarbeiter');
+            const mitarbeiter = await res.json();
+
+            return mitarbeiter.map(m => ({
+                id: m.id.toString(),
+                title: m.vorname + ' ' + m.nachname
+            }));
+        }
+
+        async function loadEvents(info, successCallback, failureCallback) {
+            try {
+                const res = await fetch('/termine', {
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+                });
+
+                if (res.status === 401) {
+                    logout();
+                    return;
+                }
+
+                const termine = await res.json();
+
+                const events = termine.map(t => ({
+                    id: t.id.toString(),
+                    resourceId: t.mitarbeiterId ? t.mitarbeiterId.toString() : null,
+                    title: t.kundeName + ' - ' + t.beschreibung,
+                    start: t.datumUhrzeit,
+                    end: new Date(new Date(t.datumUhrzeit).getTime() + 60 * 60 * 1000), // 60 minutes
+                    backgroundColor: t.erinnerungVerschickt ? '#28a745' : '#007bff',
+                    borderColor: t.erinnerungVerschickt ? '#28a745' : '#007bff',
+                    extendedProps: {
+                        kundeId: t.kundeId,
+                        beschreibung: t.beschreibung,
+                        status: t.status,
+                        erinnerungVerschickt: t.erinnerungVerschickt
+                    }
+                }));
+
+                successCallback(events);
+            } catch (error) {
+                failureCallback(error);
+            }
+        }
+
+        async function openEditModal(event) {
+            currentEvent = event;
+            document.getElementById('modalTitle').innerText = 'Termin bearbeiten';
+            document.getElementById('btnDelete').classList.remove('hidden');
+
+            // Populate form
+            document.getElementById('eventId').value = event.id;
+            document.getElementById('eventDate').value = formatDateForInput(event.start);
+            document.getElementById('eventDesc').value = event.extendedProps.beschreibung;
+
+            // Load dropdowns
+            await loadDropdowns();
+
+            // Set selected values
+            document.getElementById('eventKunde').value = event.extendedProps.kundeId;
+            document.getElementById('eventMitarbeiter').value = event.getResources()[0]?.id || '';
+
+            document.getElementById('eventModal').style.display = 'block';
+        }
+
+        async function openNewEventModal(info) {
+            currentEvent = null;
+            document.getElementById('modalTitle').innerText = 'Neuer Termin';
+            document.getElementById('btnDelete').classList.add('hidden');
+            document.getElementById('eventForm').reset();
+
+            document.getElementById('eventId').value = '';
+            document.getElementById('eventDate').value = formatDateForInput(info.start);
+
+            await loadDropdowns();
+
+            // Set the selected resource (Mitarbeiter)
+            if (info.resource) {
+                document.getElementById('eventMitarbeiter').value = info.resource.id;
+            }
+
+            document.getElementById('eventModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('eventModal').style.display = 'none';
+            currentEvent = null;
+        }
+
+        async function loadDropdowns() {
+            const [resK, resM] = await Promise.all([
+                fetch('/kunden'),
+                fetch('/mitarbeiter')
+            ]);
+
+            const kunden = await resK.json();
+            const mitarbeiter = await resM.json();
+
+            const selK = document.getElementById('eventKunde');
+            selK.innerHTML = '';
+            kunden.forEach(k => {
+                selK.innerHTML += `<option value="${k.id}">${k.nachname}, ${k.vorname}</option>`;
+            });
+
+            const selM = document.getElementById('eventMitarbeiter');
+            selM.innerHTML = '';
+            mitarbeiter.forEach(m => {
+                selM.innerHTML += `<option value="${m.id}">${m.vorname} ${m.nachname}</option>`;
+            });
+        }
+
+        document.getElementById('eventForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            await saveEvent();
+        });
+
+        async function saveEvent() {
+            const id = document.getElementById('eventId').value;
+            const body = {
+                datumUhrzeit: document.getElementById('eventDate').value,
+                beschreibung: document.getElementById('eventDesc').value,
+                kundeId: parseInt(document.getElementById('eventKunde').value),
+                mitarbeiterId: parseInt(document.getElementById('eventMitarbeiter').value)
+            };
+
+            const url = id ? '/termine/' + id : '/termine';
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                if (res.ok) {
+                    closeModal();
+                    calendar.refetchEvents();
+                } else {
+                    const text = await res.text();
+                    let errorMsg = text;
+                    try {
+                        const json = JSON.parse(text);
+                        if (json.detail) errorMsg = json.detail;
+                    } catch (e) {}
+                    alert('Fehler: ' + errorMsg);
+                }
+            } catch (error) {
+                alert('Fehler beim Speichern: ' + error);
+            }
+        }
+
+        async function deleteEvent() {
+            if (!confirm('Termin wirklich löschen?')) return;
+
+            const id = document.getElementById('eventId').value;
+
+            try {
+                await fetch('/termine/' + id, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    }
+                });
+
+                closeModal();
+                calendar.refetchEvents();
+            } catch (error) {
+                alert('Fehler beim Löschen: ' + error);
+            }
+        }
+
+        async function updateEventTime(event) {
+            const body = {
+                datumUhrzeit: event.start.toISOString(),
+                beschreibung: event.extendedProps.beschreibung,
+                kundeId: event.extendedProps.kundeId,
+                mitarbeiterId: parseInt(event.getResources()[0]?.id || 0)
+            };
+
+            try {
+                const res = await fetch('/termine/' + event.id, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                if (!res.ok) {
+                    const text = await res.text();
+                    let errorMsg = text;
+                    try {
+                        const json = JSON.parse(text);
+                        if (json.detail) errorMsg = json.detail;
+                    } catch (e) {}
+                    alert('Fehler: ' + errorMsg);
+                    calendar.refetchEvents(); // Revert
+                }
+            } catch (error) {
+                alert('Fehler beim Aktualisieren: ' + error);
+                calendar.refetchEvents(); // Revert
+            }
+        }
+
+        function formatDateForInput(date) {
+            const d = new Date(date);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const hours = String(d.getHours()).padStart(2, '0');
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('eventModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>
