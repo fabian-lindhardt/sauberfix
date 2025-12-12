@@ -1,7 +1,6 @@
 Imports Sauberfix.Data
-Imports System.Security.Cryptography
-Imports System.Text
 Imports Microsoft.EntityFrameworkCore
+Imports BCrypt.Net
 
 Public Class DatabaseSeeder
     Public Shared Sub SeedDatabase(db As AppDbContext)
@@ -18,11 +17,7 @@ Public Class DatabaseSeeder
         Console.WriteLine(">>> Seeding database with initial admin user...")
 
         Dim password As String = "admin123"
-        Dim passwordHash As String = String.Empty
-        Using sha256 As SHA256 = SHA256.Create()
-            Dim bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password))
-            passwordHash = Convert.ToBase64String(bytes)
-        End Using
+        Dim passwordHash As String = BCrypt.Net.BCrypt.HashPassword(password, BCrypt.Net.BCrypt.GenerateSalt(12))
 
         Dim admin As New Mitarbeiter With {
             .Username = "admin",

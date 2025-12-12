@@ -6,7 +6,7 @@ Imports Microsoft.IdentityModel.Tokens
 Imports System.IdentityModel.Tokens.Jwt
 Imports System.Security.Claims
 Imports System.Text
-Imports System.Security.Cryptography
+Imports BCrypt.Net
 
 Namespace Services
     Public Class AuthService
@@ -23,14 +23,10 @@ Namespace Services
             Dim user = _db.Mitarbeiter.FirstOrDefault(Function(m) m.Username = input.Username)
             If user Is Nothing Then Return Nothing ' User nicht gefunden
 
-            ' 2. Passwort prüfen (Hash vergleichen)
-            Dim inputHash As String = String.Empty
-            Using sha256 As SHA256 = SHA256.Create()
-                Dim bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input.Password))
-                inputHash = Convert.ToBase64String(bytes)
-            End Using
-
-            If user.PasswordHash <> inputHash Then Return Nothing ' Passwort falsch
+            ' 2. Passwort prüfen mit BCrypt (sicherer als SHA256!)
+            If Not BCrypt.Net.BCrypt.Verify(input.Password, user.PasswordHash) Then
+                Return Nothing ' Passwort falsch
+            End If
 
             ' 3. JWT Token bauen (Der digitale Ausweis)
             Dim tokenHandler As New JwtSecurityTokenHandler()

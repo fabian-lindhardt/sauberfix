@@ -110,6 +110,14 @@
     </div>
 
     <script>
+        // ===== SECURITY: XSS Protection =====
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         if(localStorage.getItem('token')) showDashboard();
 
         async function login() {
@@ -177,28 +185,28 @@
                     btns = `<button class="edit" onclick="editTerminById(${t.id})">Edit</button>
                             <button class="delete" onclick="deleteTermin(${t.id})">Löschen</button>`;
                 }
-                tbody.innerHTML += `<tr><td>${new Date(t.datumUhrzeit).toLocaleString('de-DE')}</td><td>${new Date(t.endzeit).toLocaleString('de-DE')}</td><td>${t.beschreibung}</td><td>${t.kundeName}</td><td>${t.mitarbeiterName}</td><td>${mailStatus}</td><td>${btns}</td></tr>`;
+                tbody.innerHTML += `<tr><td>${new Date(t.datumUhrzeit).toLocaleString('de-DE')}</td><td>${new Date(t.endzeit).toLocaleString('de-DE')}</td><td>${escapeHtml(t.beschreibung)}</td><td>${escapeHtml(t.kundeName)}</td><td>${escapeHtml(t.mitarbeiterName)}</td><td>${mailStatus}</td><td>${btns}</td></tr>`;
             });
         }
         
         async function loadKundenTable() {
-            const res = await fetch('/kunden');
+            const res = await fetch('/kunden', { headers: {'Authorization': 'Bearer '+localStorage.getItem('token')} });
             const data = await res.json();
             const tbody = document.getElementById('kundenTable'); tbody.innerHTML = '';
             window.kundenData = data; // Store data globally for edit
             data.forEach(k => {
                 let kundeDisplay = '';
                 if (k.firma && k.firma.trim() !== '') {
-                    kundeDisplay = `<strong>${k.firma}</strong><br><small>${k.vorname} ${k.nachname}</small>`;
+                    kundeDisplay = `<strong>${escapeHtml(k.firma)}</strong><br><small>${escapeHtml(k.vorname)} ${escapeHtml(k.nachname)}</small>`;
                 } else {
-                    kundeDisplay = `<strong>${k.vorname} ${k.nachname}</strong>`;
+                    kundeDisplay = `<strong>${escapeHtml(k.vorname)} ${escapeHtml(k.nachname)}</strong>`;
                 }
-                const emailDisplay = k.email ? `<a href="mailto:${k.email}">${k.email}</a>` : '-';
+                const emailDisplay = k.email ? `<a href="mailto:${escapeHtml(k.email)}">${escapeHtml(k.email)}</a>` : '-';
                 tbody.innerHTML += `<tr>
                     <td>${kundeDisplay}</td>
-                    <td>${k.strasse || ''}, ${k.plz} ${k.stadt}</td>
+                    <td>${escapeHtml(k.strasse || '')}, ${escapeHtml(k.plz)} ${escapeHtml(k.stadt)}</td>
                     <td>${emailDisplay}</td>
-                    <td>${k.telefon || '-'}</td>
+                    <td>${escapeHtml(k.telefon || '-')}</td>
                     <td>
                         <button class="edit" onclick="editKundeById(${k.id})">Edit</button>
                         <button class="delete" onclick="deleteKunde(${k.id})">Löschen</button>
@@ -276,12 +284,12 @@
 
         // --- MITARBEITER LOGIK ---
         async function loadMitarbeiterTable() {
-            const res = await fetch('/mitarbeiter');
+            const res = await fetch('/mitarbeiter', { headers: {'Authorization': 'Bearer '+localStorage.getItem('token')} });
             const data = await res.json();
             const tbody = document.getElementById('maTable'); tbody.innerHTML = '';
             window.mitarbeiterData = data; // Store data globally for edit
             data.forEach(m => {
-                tbody.innerHTML += `<tr><td>${m.username}</td><td>${m.vorname} ${m.nachname}</td><td>${m.rolle}</td><td>
+                tbody.innerHTML += `<tr><td>${escapeHtml(m.username)}</td><td>${escapeHtml(m.vorname)} ${escapeHtml(m.nachname)}</td><td>${escapeHtml(m.rolle)}</td><td>
                     <button class="edit" onclick="editMitarbeiterById(${m.id})">Edit</button>
                     <button class="delete" onclick="deleteMitarbeiter(${m.id})">Löschen</button>
                 </td></tr>`;
@@ -344,14 +352,15 @@
         
         // --- TERMIN LOGIK ---
         async function loadDropdowns() {
-            const [rk, rm] = await Promise.all([fetch('/kunden'), fetch('/mitarbeiter')]);
+            const headers = {'Authorization': 'Bearer '+localStorage.getItem('token')};
+            const [rk, rm] = await Promise.all([fetch('/kunden', {headers}), fetch('/mitarbeiter', {headers})]);
             const k = await rk.json(); const m = await rm.json();
 
             const selK = document.getElementById('newT_Kunde'); selK.innerHTML = '';
-            k.forEach(x => selK.innerHTML += `<option value="${x.id}">${x.nachname}, ${x.vorname}</option>`);
+            k.forEach(x => selK.innerHTML += `<option value="${x.id}">${escapeHtml(x.nachname)}, ${escapeHtml(x.vorname)}</option>`);
 
             const selM = document.getElementById('newT_MA'); selM.innerHTML = '';
-            m.forEach(x => selM.innerHTML += `<option value="${x.id}">${x.username}</option>`);
+            m.forEach(x => selM.innerHTML += `<option value="${x.id}">${escapeHtml(x.username)}</option>`);
         }
 
         // Auto-set end time to 30 minutes after start time

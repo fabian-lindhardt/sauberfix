@@ -1,9 +1,8 @@
 Imports Sauberfix.Data
 Imports Microsoft.EntityFrameworkCore
-Imports Sauberfix 
-Imports System.Security.Cryptography
-Imports System.Text
+Imports Sauberfix
 Imports System
+Imports BCrypt.Net
 
 Namespace Services
     Public Class MitarbeiterService
@@ -76,11 +75,9 @@ Namespace Services
             End If
         End Sub
 
-        ' --- WICHTIG: Shared (Statisch) gemacht ---
+        ' --- SICHER: BCrypt mit automatischem Salt ---
         Private Shared Function HashPassword(pw As String) As String
-            Using sha256 As SHA256 = SHA256.Create()
-                Return Convert.ToBase64String(sha256.ComputeHash(Encoding.UTF8.GetBytes(pw)))
-            End Using
+            Return BCrypt.Net.BCrypt.HashPassword(pw, BCrypt.Net.BCrypt.GenerateSalt(12))
         End Function
 
         ' --- WICHTIG: Shared (Statisch) gemacht ---

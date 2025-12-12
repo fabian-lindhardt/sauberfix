@@ -29,7 +29,7 @@ Module Program
             x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme
             x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme
         End Function).AddJwtBearer(Function(x)
-            x.RequireHttpsMetadata = False
+            x.RequireHttpsMetadata = True
             x.SaveToken = True
             x.TokenValidationParameters = New TokenValidationParameters With {
                 .ValidateIssuerSigningKey = True,
@@ -42,6 +42,17 @@ Module Program
         End Function)
         
         builder.Services.AddAuthorization()
+
+        ' CORS-Konfiguration für Sicherheit
+        builder.Services.AddCors(Sub(options)
+            options.AddPolicy("AllowFrontend", Function(policy)
+                Return policy.WithOrigins("http://localhost:5000", "https://localhost:5001") _
+                      .AllowAnyMethod() _
+                      .AllowAnyHeader() _
+                      .AllowCredentials()
+            End Function)
+        End Sub)
+
         builder.Services.AddScoped(Of KundenService)()
         builder.Services.AddScoped(Of MitarbeiterService)()
         builder.Services.AddScoped(Of TerminService)()
@@ -51,6 +62,7 @@ Module Program
         Dim app = builder.Build()
         app.UseDefaultFiles()
         app.UseStaticFiles()
+        app.UseCors("AllowFrontend")
         app.UseAuthentication()
         app.UseAuthorization()
 
@@ -61,23 +73,27 @@ Module Program
         End Function)
 
         ' MITARBEITER
-        app.MapPost("/mitarbeiter", Function(s As MitarbeiterService, i As CreateMitarbeiterDto) 
+        app.MapPost("/mitarbeiter", Function(s As MitarbeiterService, i As CreateMitarbeiterDto)
              Try
                  Return Results.Created("/m", s.CreateMitarbeiter(i))
-             Catch ex As Exception
+             Catch ex As ArgumentException
                  Return Results.Problem(ex.Message)
+             Catch ex As Exception
+                 Return Results.Problem("Ein Fehler ist beim Erstellen des Mitarbeiters aufgetreten.")
              End Try
-        End Function)
+        End Function).RequireAuthorization()
         
         app.MapPut("/mitarbeiter/{id}", Function(s As MitarbeiterService, id As Integer, i As CreateMitarbeiterDto)
              Try
                  Return Results.Ok(s.UpdateMitarbeiter(id, i))
-             Catch ex As Exception
+             Catch ex As ArgumentException
                  Return Results.Problem(ex.Message)
+             Catch ex As Exception
+                 Return Results.Problem("Ein Fehler ist beim Aktualisieren des Mitarbeiters aufgetreten.")
              End Try
         End Function).RequireAuthorization()
 
-        app.MapGet("/mitarbeiter", Function(s As MitarbeiterService) s.GetAllMitarbeiter())
+        app.MapGet("/mitarbeiter", Function(s As MitarbeiterService) s.GetAllMitarbeiter()).RequireAuthorization()
         
         app.MapDelete("/mitarbeiter/{id}", Function(s As MitarbeiterService, id As Integer)
             s.DeleteMitarbeiter(id)
@@ -94,16 +110,20 @@ Module Program
         app.MapPost("/termine", Function(s As TerminService, i As CreateTerminDto)
             Try
                 Return Results.Created("/t", s.CreateTermin(i))
-            Catch ex As Exception
+            Catch ex As ArgumentException
                 Return Results.Problem(ex.Message)
+            Catch ex As Exception
+                Return Results.Problem("Ein Fehler ist beim Erstellen des Termins aufgetreten.")
             End Try
         End Function).RequireAuthorization()
 
         app.MapPut("/termine/{id}", Function(s As TerminService, id As Integer, i As CreateTerminDto)
             Try
                 Return Results.Ok(s.UpdateTermin(id, i))
-            Catch ex As Exception
+            Catch ex As ArgumentException
                 Return Results.Problem(ex.Message)
+            Catch ex As Exception
+                Return Results.Problem("Ein Fehler ist beim Aktualisieren des Termins aufgetreten.")
             End Try
         End Function).RequireAuthorization()
 
@@ -113,15 +133,17 @@ Module Program
         End Function).RequireAuthorization()
 
         ' KUNDEN
-        app.MapPost("/kunden", Function(s As KundenService, i As CreateKundeDto) Results.Created("/k", s.CreateKunde(i)))
-        app.MapGet("/kunden", Function(s As KundenService) s.GetAllKunden())
+        app.MapPost("/kunden", Function(s As KundenService, i As CreateKundeDto) Results.Created("/k", s.CreateKunde(i))).RequireAuthorization()
+        app.MapGet("/kunden", Function(s As KundenService) s.GetAllKunden()).RequireAuthorization()
         
         ' NEU: Update Kunde
         app.MapPut("/kunden/{id}", Function(s As KundenService, id As Integer, i As CreateKundeDto)
              Try
                  Return Results.Ok(s.UpdateKunde(id, i))
-             Catch ex As Exception
+             Catch ex As ArgumentException
                  Return Results.Problem(ex.Message)
+             Catch ex As Exception
+                 Return Results.Problem("Ein Fehler ist beim Aktualisieren des Kunden aufgetreten.")
              End Try
         End Function).RequireAuthorization()
 
