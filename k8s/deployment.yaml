@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sauberfix
+  labels:
+    app: sauberfix
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sauberfix
+  template:
+    metadata:
+      labels:
+        app: sauberfix
+    spec:
+      imagePullSecrets:
+      - name: ghcr-secret
+      containers:
+      - name: sauberfix
+        image: ghcr.io/fabian-lindhardt/sauberfix:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ConnectionStrings__DefaultConnection
+          value: "Host=flairtec-postgres-rw.default.svc.cluster.local;Port=5432;Database=sauberfix;Username=appuser;Password='Berg5191,'"
+        - name: JwtSettings__Key
+          value: "fjdshfkjahfjqkfhajkhsdaksjdhkjashdajkshdjksdhkjsahdjk!"
+        - name: JwtSettings__Issuer
+          value: "SauberfixAPI"
+        - name: JwtSettings__Audience
+          value: "SauberfixClient"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sauberfix
+spec:
+  selector:
+    app: sauberfix
+  ports:
+  - port: 80
+    targetPort: 5000
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sauberfix
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  tls:
+  - hosts:
+    - sauberfix.flairtec.de
+    secretName: sauberfix-tls
+  rules:
+  - host: sauberfix.flairtec.de
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: sauberfix
+            port:
+              number: 80

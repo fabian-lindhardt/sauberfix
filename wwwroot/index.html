@@ -118,7 +118,11 @@
             return div.innerHTML;
         }
 
-        if(localStorage.getItem('token')) showDashboard();
+        // Initialize dashboard when page loads if token exists
+        if(localStorage.getItem('token')) {
+            // Small delay to ensure DOM is fully loaded
+            setTimeout(() => showDashboard(), 100);
+        }
 
         async function login() {
             try {
@@ -126,25 +130,36 @@
                 if(!res.ok) throw new Error();
                 const d = await res.json();
                 localStorage.setItem('token', d.token); localStorage.setItem('role', d.rolle); localStorage.setItem('user', d.username);
-                showDashboard();
+                await showDashboard();
             } catch { alert("Login fehlgeschlagen"); }
         }
         function logout() { localStorage.clear(); location.reload(); }
 
-        function showDashboard() {
+        async function showDashboard() {
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('dashboardSection').classList.remove('hidden');
             document.getElementById('userInfo').classList.remove('hidden');
             document.getElementById('welcomeMsg').innerText = localStorage.getItem('user') + " (" + localStorage.getItem('role') + ")";
-            
-            if(localStorage.getItem('role') === 'Admin') {
-                document.getElementById('adminArea').classList.remove('hidden');
-                document.getElementById('maListCard').classList.remove('hidden');
-                loadDropdowns();
-                loadMitarbeiterTable();
-                loadKundenTable(); 
+
+            try {
+                if(localStorage.getItem('role') === 'Admin') {
+                    document.getElementById('adminArea').classList.remove('hidden');
+                    document.getElementById('maListCard').classList.remove('hidden');
+                    // Load data with proper error handling
+                    await Promise.all([
+                        loadDropdowns().catch(e => console.error('Failed to load dropdowns:', e)),
+                        loadMitarbeiterTable().catch(e => console.error('Failed to load Mitarbeiter:', e)),
+                        loadKundenTable().catch(e => console.error('Failed to load Kunden:', e))
+                    ]);
+                }
+                await loadTermine().catch(e => console.error('Failed to load Termine:', e));
+            } catch(e) {
+                console.error('Dashboard initialization error:', e);
+                // If token is invalid, logout
+                if(e.message && e.message.includes('401')) {
+                    logout();
+                }
             }
-            loadTermine();
         }
 
         // --- INTELLIGENTE FEHLERBEHANDLUNG ---
@@ -171,50 +186,139 @@
             }
         }
 
-        async function loadTermine() {
-            const res = await fetch('/termine', { headers: {'Authorization': 'Bearer '+localStorage.getItem('token')} });
-            if(res.status===401) { logout(); return; }
-            const data = await res.json();
-            const tbody = document.getElementById('termineTable'); tbody.innerHTML = '';
-            window.termineData = data; // Store data globally for edit
+        // Authenticated fetch with retry logic - only logout on 401
+        async function authFetch(url, options = {}, retries = 2) {
+            let lastError = null;
 
-            data.forEach(t => {
-                const mailStatus = t.erinnerungVerschickt ? '<span class="email-sent">Ja ✅</span>' : '<span class="email-wait">Geplant</span>';
-                let btns = '';
-                if(localStorage.getItem('role') === 'Admin') {
-                    btns = `<button class="edit" onclick="editTerminById(${t.id})">Edit</button>
-                            <button class="delete" onclick="deleteTermin(${t.id})">Löschen</button>`;
+            for(let i = 0; i <= retries; i++) {
+                try {
+                    const res = await fetch(url, options);
+                    if(res.status === 401) {
+                        logout();
+                        throw new Error('401 Unauthorized');
+                    }
+                    return res;
+                } catch(e) {
+                    lastError = e;
+
+                    // Don't retry on 401
+                    if(e.message.includes('401')) throw e;
+
+                    if(i < retries) {
+                        console.warn(`Request failed (attempt ${i+1}), retrying...`, e.message);
+                        await new Promise(r => setTimeout(r, 300 * (i + 1))); // 300ms, 600ms delay
+                    }
                 }
-                tbody.innerHTML += `<tr><td>${new Date(t.datumUhrzeit).toLocaleString('de-DE')}</td><td>${new Date(t.endzeit).toLocaleString('de-DE')}</td><td>${escapeHtml(t.beschreibung)}</td><td>${escapeHtml(t.kundeName)}</td><td>${escapeHtml(t.mitarbeiterName)}</td><td>${mailStatus}</td><td>${btns}</td></tr>`;
-            });
+            }
+
+            // All retries failed - if it's a network error, likely Coder proxy session expired
+            if(lastError && lastError.name === 'TypeError' && lastError.message === 'Failed to fetch') {
+                console.error('Coder proxy session expired - reloading page...');
+                alert('Sitzung abgelaufen. Die Seite wird neu geladen.');
+                window.location.reload();
+                return; // Won't reach here, but for clarity
+            }
+
+            throw lastError;
         }
-        
+
+        // Retry fetch with exponential backoff
+        async function fetchWithRetry(url, options, retries = 2, delay = 500) {
+            let lastError = null;
+
+            for(let i = 0; i <= retries; i++) {
+                try {
+                    const res = await fetch(url, options);
+
+                    // Only logout on explicit 401 Unauthorized
+                    if(res.status === 401) {
+                        logout();
+                        throw new Error('401 Unauthorized');
+                    }
+                    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+                    return res;
+                } catch(e) {
+                    lastError = e;
+
+                    // Don't retry on 401
+                    if(e.message.includes('401')) throw e;
+
+                    if(i < retries) {
+                        console.warn(`Fetch attempt ${i+1} failed, retrying in ${delay}ms...`, e);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2;
+                    }
+                }
+            }
+
+            // All retries failed - if it's a network error, likely Coder proxy session expired
+            if(lastError && lastError.name === 'TypeError' && lastError.message === 'Failed to fetch') {
+                console.error('Coder proxy session expired - reloading page...');
+                alert('Sitzung abgelaufen. Die Seite wird neu geladen.');
+                window.location.reload();
+                return;
+            }
+
+            throw lastError;
+        }
+
+        async function loadTermine() {
+            try {
+                const res = await fetchWithRetry('/termine', {
+                    headers: {'Authorization': 'Bearer '+localStorage.getItem('token')}
+                });
+                const data = await res.json();
+                const tbody = document.getElementById('termineTable'); tbody.innerHTML = '';
+                window.termineData = data; // Store data globally for edit
+
+                data.forEach(t => {
+                    const mailStatus = t.erinnerungVerschickt ? '<span class="email-sent">Ja ✅</span>' : '<span class="email-wait">Geplant</span>';
+                    let btns = '';
+                    if(localStorage.getItem('role') === 'Admin') {
+                        btns = `<button class="edit" onclick="editTerminById(${t.id})">Edit</button>
+                                <button class="delete" onclick="deleteTermin(${t.id})">Löschen</button>`;
+                    }
+                    tbody.innerHTML += `<tr><td>${new Date(t.datumUhrzeit).toLocaleString('de-DE')}</td><td>${new Date(t.endzeit).toLocaleString('de-DE')}</td><td>${escapeHtml(t.beschreibung)}</td><td>${escapeHtml(t.kundeName)}</td><td>${escapeHtml(t.mitarbeiterName)}</td><td>${mailStatus}</td><td>${btns}</td></tr>`;
+                });
+            } catch(e) {
+                console.error('Failed to load Termine:', e);
+                // Connection errors are handled by fetchWithRetry -> setConnectionError()
+            }
+        }
+
         async function loadKundenTable() {
-            const res = await fetch('/kunden', { headers: {'Authorization': 'Bearer '+localStorage.getItem('token')} });
-            const data = await res.json();
-            const tbody = document.getElementById('kundenTable'); tbody.innerHTML = '';
-            window.kundenData = data; // Store data globally for edit
-            data.forEach(k => {
-                let kundeDisplay = '';
-                if (k.firma && k.firma.trim() !== '') {
-                    kundeDisplay = `<strong>${escapeHtml(k.firma)}</strong><br><small>${escapeHtml(k.vorname)} ${escapeHtml(k.nachname)}</small>`;
-                } else {
-                    kundeDisplay = `<strong>${escapeHtml(k.vorname)} ${escapeHtml(k.nachname)}</strong>`;
-                }
-                const emailDisplay = k.email ? `<a href="mailto:${escapeHtml(k.email)}">${escapeHtml(k.email)}</a>` : '-';
-                tbody.innerHTML += `<tr>
-                    <td>${kundeDisplay}</td>
-                    <td>${escapeHtml(k.strasse || '')}, ${escapeHtml(k.plz)} ${escapeHtml(k.stadt)}</td>
-                    <td>${emailDisplay}</td>
-                    <td>${escapeHtml(k.telefon || '-')}</td>
-                    <td>
-                        <button class="edit" onclick="editKundeById(${k.id})">Edit</button>
-                        <button class="delete" onclick="deleteKunde(${k.id})">Löschen</button>
-                    </td>
-                </tr>`;
-            });
+            try {
+                const res = await fetchWithRetry('/kunden', {
+                    headers: {'Authorization': 'Bearer '+localStorage.getItem('token')}
+                });
+                const data = await res.json();
+                const tbody = document.getElementById('kundenTable'); tbody.innerHTML = '';
+                window.kundenData = data; // Store data globally for edit
+                data.forEach(k => {
+                    let kundeDisplay = '';
+                    if (k.firma && k.firma.trim() !== '') {
+                        kundeDisplay = `<strong>${escapeHtml(k.firma)}</strong><br><small>${escapeHtml(k.vorname)} ${escapeHtml(k.nachname)}</small>`;
+                    } else {
+                        kundeDisplay = `<strong>${escapeHtml(k.vorname)} ${escapeHtml(k.nachname)}</strong>`;
+                    }
+                    const emailDisplay = k.email ? `<a href="mailto:${escapeHtml(k.email)}">${escapeHtml(k.email)}</a>` : '-';
+                    tbody.innerHTML += `<tr>
+                        <td>${kundeDisplay}</td>
+                        <td>${escapeHtml(k.strasse || '')}, ${escapeHtml(k.plz)} ${escapeHtml(k.stadt)}</td>
+                        <td>${emailDisplay}</td>
+                        <td>${escapeHtml(k.telefon || '-')}</td>
+                        <td>
+                            <button class="edit" onclick="editKundeById(${k.id})">Edit</button>
+                            <button class="delete" onclick="deleteKunde(${k.id})">Löschen</button>
+                        </td>
+                    </tr>`;
+                });
+            } catch(e) {
+                console.error('Failed to load Kunden:', e);
+                // Connection errors are handled by fetchWithRetry -> setConnectionError()
+            }
         }
-        
+
         // --- KUNDEN LOGIK ---
         function editKundeById(id) {
             const k = window.kundenData.find(kunde => kunde.id === id);
@@ -265,35 +369,44 @@
             const method = id ? 'PUT' : 'POST';
 
             try {
-                const res = await fetch(url, { method: method, headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+localStorage.getItem('token')}, body:JSON.stringify(body)});
-                if(res.ok) { 
-                    document.getElementById('msgKunde').innerText = "Kunde gespeichert!"; 
+                const res = await authFetch(url, { method: method, headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+localStorage.getItem('token')}, body:JSON.stringify(body)});
+                if(res.ok) {
+                    document.getElementById('msgKunde').innerText = "Kunde gespeichert!";
                     document.getElementById('msgKunde').className = "msg-success";
                     resetKundeForm(); loadKundenTable(); loadDropdowns();
-                } else { 
-                    await handleError(res, 'msgKunde'); 
+                } else {
+                    await handleError(res, 'msgKunde');
                 }
-            } catch(e) { alert(e); }
+            } catch(e) { if(!e.message.includes('Session expired')) alert(e); }
         }
-        
+
         async function deleteKunde(id) {
             if(!confirm("Kunde wirklich löschen?")) return;
-            await fetch('/kunden/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
-            loadKundenTable(); loadDropdowns();
+            try {
+                await authFetch('/kunden/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
+                loadKundenTable(); loadDropdowns();
+            } catch(e) { if(!e.message.includes('Session expired')) alert(e); }
         }
 
         // --- MITARBEITER LOGIK ---
         async function loadMitarbeiterTable() {
-            const res = await fetch('/mitarbeiter', { headers: {'Authorization': 'Bearer '+localStorage.getItem('token')} });
-            const data = await res.json();
-            const tbody = document.getElementById('maTable'); tbody.innerHTML = '';
-            window.mitarbeiterData = data; // Store data globally for edit
-            data.forEach(m => {
-                tbody.innerHTML += `<tr><td>${escapeHtml(m.username)}</td><td>${escapeHtml(m.vorname)} ${escapeHtml(m.nachname)}</td><td>${escapeHtml(m.rolle)}</td><td>
-                    <button class="edit" onclick="editMitarbeiterById(${m.id})">Edit</button>
-                    <button class="delete" onclick="deleteMitarbeiter(${m.id})">Löschen</button>
-                </td></tr>`;
-            });
+            try {
+                const res = await fetchWithRetry('/mitarbeiter', {
+                    headers: {'Authorization': 'Bearer '+localStorage.getItem('token')}
+                });
+                const data = await res.json();
+                const tbody = document.getElementById('maTable'); tbody.innerHTML = '';
+                window.mitarbeiterData = data; // Store data globally for edit
+                data.forEach(m => {
+                    tbody.innerHTML += `<tr><td>${escapeHtml(m.username)}</td><td>${escapeHtml(m.vorname)} ${escapeHtml(m.nachname)}</td><td>${escapeHtml(m.rolle)}</td><td>
+                        <button class="edit" onclick="editMitarbeiterById(${m.id})">Edit</button>
+                        <button class="delete" onclick="deleteMitarbeiter(${m.id})">Löschen</button>
+                    </td></tr>`;
+                });
+            } catch(e) {
+                console.error('Failed to load Mitarbeiter:', e);
+                // Connection errors are handled by fetchWithRetry -> setConnectionError()
+            }
         }
 
         function editMitarbeiterById(id) {
@@ -333,34 +446,49 @@
             const url = id ? '/mitarbeiter/' + id : '/mitarbeiter';
             const method = id ? 'PUT' : 'POST';
             try {
-                const res = await fetch(url, { method: method, headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+localStorage.getItem('token')}, body:JSON.stringify(body)});
-                if(res.ok) { 
-                    document.getElementById('msgMitarbeiter').innerText = "Gespeichert!"; 
+                const res = await authFetch(url, { method: method, headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+localStorage.getItem('token')}, body:JSON.stringify(body)});
+                if(res.ok) {
+                    document.getElementById('msgMitarbeiter').innerText = "Gespeichert!";
                     document.getElementById('msgMitarbeiter').className = "msg-success";
                     resetMitarbeiterForm(); loadMitarbeiterTable(); loadDropdowns();
-                } else { 
+                } else {
                     await handleError(res, 'msgMitarbeiter');
                 }
-            } catch(e) { alert(e); }
+            } catch(e) { if(!e.message.includes('Session expired')) alert(e); }
         }
 
         async function deleteMitarbeiter(id) {
             if(!confirm("Löschen?")) return;
-            await fetch('/mitarbeiter/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
-            loadMitarbeiterTable(); loadDropdowns();
+            try {
+                await authFetch('/mitarbeiter/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
+                loadMitarbeiterTable(); loadDropdowns();
+            } catch(e) { if(!e.message.includes('Session expired')) alert(e); }
         }
         
         // --- TERMIN LOGIK ---
         async function loadDropdowns() {
-            const headers = {'Authorization': 'Bearer '+localStorage.getItem('token')};
-            const [rk, rm] = await Promise.all([fetch('/kunden', {headers}), fetch('/mitarbeiter', {headers})]);
-            const k = await rk.json(); const m = await rm.json();
+            try {
+                const headers = {'Authorization': 'Bearer '+localStorage.getItem('token')};
+                const [rk, rm] = await Promise.all([
+                    fetchWithRetry('/kunden', {headers}),
+                    fetchWithRetry('/mitarbeiter', {headers})
+                ]);
+                const k = await rk.json(); const m = await rm.json();
 
-            const selK = document.getElementById('newT_Kunde'); selK.innerHTML = '';
-            k.forEach(x => selK.innerHTML += `<option value="${x.id}">${escapeHtml(x.nachname)}, ${escapeHtml(x.vorname)}</option>`);
+                const selK = document.getElementById('newT_Kunde'); selK.innerHTML = '';
+                k.forEach(x => {
+                    let displayName = x.firma && x.firma.trim() !== ''
+                        ? `${escapeHtml(x.firma)} (${escapeHtml(x.vorname)} ${escapeHtml(x.nachname)})`
+                        : `${escapeHtml(x.nachname)}, ${escapeHtml(x.vorname)}`;
+                    selK.innerHTML += `<option value="${x.id}">${displayName}</option>`;
+                });
 
-            const selM = document.getElementById('newT_MA'); selM.innerHTML = '';
-            m.forEach(x => selM.innerHTML += `<option value="${x.id}">${escapeHtml(x.username)}</option>`);
+                const selM = document.getElementById('newT_MA'); selM.innerHTML = '';
+                m.forEach(x => selM.innerHTML += `<option value="${x.id}">${escapeHtml(x.username)}</option>`);
+            } catch(e) {
+                console.error('Failed to load dropdowns:', e);
+                // Connection errors are handled by fetchWithRetry -> setConnectionError()
+            }
         }
 
         // Auto-set end time to 30 minutes after start time
@@ -422,22 +550,23 @@
             const method = id ? 'PUT' : 'POST';
 
             try {
-                const res = await fetch(url, { method: method, headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+localStorage.getItem('token')}, body:JSON.stringify(body)});
-                if(res.ok) { 
-                    document.getElementById('msgTermin').innerText = "Termin erfolgreich gebucht!"; 
+                const res = await authFetch(url, { method: method, headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+localStorage.getItem('token')}, body:JSON.stringify(body)});
+                if(res.ok) {
+                    document.getElementById('msgTermin').innerText = "Termin erfolgreich gebucht!";
                     document.getElementById('msgTermin').className = "msg-success";
-                    resetTerminForm(); loadTermine(); 
-                } else { 
-                    // HIER RUFEN WIR DIE NEUE FUNKTION AUF:
+                    resetTerminForm(); loadTermine();
+                } else {
                     await handleError(res, 'msgTermin');
                 }
-            } catch(e) { alert(e); }
+            } catch(e) { if(!e.message.includes('Session expired')) alert(e); }
         }
 
         async function deleteTermin(id) {
             if(!confirm("Löschen?")) return;
-            await fetch('/termine/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
-            loadTermine();
+            try {
+                await authFetch('/termine/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
+                loadTermine();
+            } catch(e) { if(!e.message.includes('Session expired')) alert(e); }
         }
     </script>
 </body>

@@ -11,8 +11,22 @@ Namespace Services
         End Sub
 
         Public Function CreateKunde(input As CreateKundeDto) As KundeResponseDto
+            ' Validierung: Mindestens Vorname und Nachname müssen angegeben werden
+            If String.IsNullOrWhiteSpace(input.Vorname) Then
+                Throw New ArgumentException("Vorname ist erforderlich")
+            End If
+            If String.IsNullOrWhiteSpace(input.Nachname) Then
+                Throw New ArgumentException("Nachname ist erforderlich")
+            End If
+            If String.IsNullOrWhiteSpace(input.Plz) Then
+                Throw New ArgumentException("PLZ ist erforderlich")
+            End If
+            If String.IsNullOrWhiteSpace(input.Stadt) Then
+                Throw New ArgumentException("Stadt ist erforderlich")
+            End If
+
             Dim ort = GetOrCreateOrt(input.Plz, input.Stadt)
-            
+
             Dim k As New Kunde() With {
                 .Vorname = input.Vorname,
                 .Nachname = input.Nachname,
@@ -28,6 +42,20 @@ Namespace Services
         End Function
 
         Public Function UpdateKunde(id As Integer, input As CreateKundeDto) As KundeResponseDto
+            ' Validierung
+            If String.IsNullOrWhiteSpace(input.Vorname) Then
+                Throw New ArgumentException("Vorname ist erforderlich")
+            End If
+            If String.IsNullOrWhiteSpace(input.Nachname) Then
+                Throw New ArgumentException("Nachname ist erforderlich")
+            End If
+            If String.IsNullOrWhiteSpace(input.Plz) Then
+                Throw New ArgumentException("PLZ ist erforderlich")
+            End If
+            If String.IsNullOrWhiteSpace(input.Stadt) Then
+                Throw New ArgumentException("Stadt ist erforderlich")
+            End If
+
             Dim k = _db.Kunden.Include(Function(x) x.Ort).FirstOrDefault(Function(x) x.Id = id)
             If k Is Nothing Then Throw New ArgumentException("Kunde nicht gefunden")
 

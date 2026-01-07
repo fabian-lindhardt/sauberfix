@@ -240,9 +240,85 @@
         let calendar;
         let currentEvent = null;
 
-        // Check if already logged in
+        // Authenticated fetch with retry logic - only logout on 401
+        async function authFetch(url, options = {}, retries = 2) {
+            let lastError = null;
+
+            for(let i = 0; i <= retries; i++) {
+                try {
+                    const res = await fetch(url, options);
+                    if(res.status === 401) {
+                        logout();
+                        throw new Error('401 Unauthorized');
+                    }
+                    return res;
+                } catch(e) {
+                    lastError = e;
+
+                    // Don't retry on 401
+                    if(e.message.includes('401')) throw e;
+
+                    if(i < retries) {
+                        console.warn(`Request failed (attempt ${i+1}), retrying...`, e.message);
+                        await new Promise(r => setTimeout(r, 300 * (i + 1))); // 300ms, 600ms delay
+                    }
+                }
+            }
+
+            // All retries failed - if it's a network error, likely Coder proxy session expired
+            if(lastError && lastError.name === 'TypeError' && lastError.message === 'Failed to fetch') {
+                console.error('Coder proxy session expired - reloading page...');
+                alert('Sitzung abgelaufen. Die Seite wird neu geladen.');
+                window.location.reload();
+                return;
+            }
+
+            throw lastError;
+        }
+
+        // Retry fetch with exponential backoff
+        async function fetchWithRetry(url, options, retries = 2, delay = 500) {
+            let lastError = null;
+
+            for(let i = 0; i <= retries; i++) {
+                try {
+                    const res = await fetch(url, options);
+
+                    // Only logout on explicit 401 Unauthorized
+                    if(res.status === 401) {
+                        logout();
+                        throw new Error('401 Unauthorized');
+                    }
+                    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+                    return res;
+                } catch(e) {
+                    lastError = e;
+
+                    // Don't retry on 401
+                    if(e.message.includes('401')) throw e;
+
+                    if(i < retries) {
+                        console.warn(`Fetch attempt ${i+1} failed, retrying in ${delay}ms...`, e);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2;
+                    }
+                }
+            }
+
+            // All retries failed - if it's a network error, likely Coder proxy session expired
+            if(lastError && lastError.name === 'TypeError' && lastError.message === 'Failed to fetch') {
+                console.error('Coder proxy session expired - reloading page...');
+                alert('Sitzung abgelaufen. Die Seite wird neu geladen.');
+                window.location.reload();
+                return;
+            }
+
+            throw lastError;
+        }
+
+        // Check if already logged in - with small delay to ensure DOM is ready
         if (localStorage.getItem('token')) {
-            showApp();
+            setTimeout(() => showApp(), 100);
         }
 
         async function login() {
@@ -260,7 +336,7 @@
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('role', data.rolle);
                 localStorage.setItem('user', data.username);
-                showApp();
+                await showApp();
             } catch {
                 alert("Login fehlgeschlagen");
             }
@@ -277,18 +353,27 @@
             document.getElementById('welcomeMsg').innerText =
                 localStorage.getItem('user') + " (" + localStorage.getItem('role') + ")";
 
-            await initCalendar();
+            try {
+                await initCalendar();
+            } catch(e) {
+                console.error('Calendar initialization error:', e);
+                if(!e.message.includes('401')) {
+                    alert('⚠️ Konnte Kalender nicht laden. Bitte Seite aktualisieren.');
+                }
+            }
         }
 
         async function initCalendar() {
             const calendarEl = document.getElementById('calendar');
 
-            // Load resources (Mitarbeiter)
+            // Load resources (Mitarbeiter) with retry logic
             const resources = await loadResources();
 
             calendar = new FullCalendar.Calendar(calendarEl, {
                 schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives',
                 initialView: 'resourceTimelineWeek',
+                initialDate: new Date(),
+                firstDay: 1, // Woche beginnt am Montag
                 locale: 'de',
                 headerToolbar: {
                     left: 'prev,next today',
@@ -341,25 +426,30 @@
         }
 
         async function loadResources() {
-            const res = await fetch('/mitarbeiter', { headers: {'Authorization': 'Bearer '+localStorage.getItem('token')} });
-            const mitarbeiter = await res.json();
+            try {
+                const res = await fetchWithRetry('/mitarbeiter', {
+                    headers: {'Authorization': 'Bearer '+localStorage.getItem('token')}
+                });
+                const mitarbeiter = await res.json();
 
-            return mitarbeiter.map(m => ({
-                id: m.id.toString(),
-                title: m.vorname + ' ' + m.nachname
-            }));
+                return mitarbeiter.map(m => ({
+                    id: m.id.toString(),
+                    title: m.vorname + ' ' + m.nachname
+                }));
+            } catch(e) {
+                console.error('Failed to load resources:', e);
+                if(!e.message.includes('401')) {
+                    alert('⚠️ Konnte Mitarbeiter nicht laden. Bitte Seite aktualisieren.');
+                }
+                return [];
+            }
         }
 
         async function loadEvents(info, successCallback, failureCallback) {
             try {
-                const res = await fetch('/termine', {
+                const res = await fetchWithRetry('/termine', {
                     headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
                 });
-
-                if (res.status === 401) {
-                    logout();
-                    return;
-                }
 
                 const termine = await res.json();
                 console.log('Loaded termine:', termine);
@@ -453,13 +543,10 @@
             const selK = document.getElementById('eventKunde');
             selK.innerHTML = '';
             kunden.forEach(k => {
-                // Wenn Kunde eine Firma hat, zeige Firmenname zuerst, dann den Namen
-                let kundeDisplay;
-                if (k.firma && k.firma.trim() !== '') {
-                    kundeDisplay = `${escapeHtml(k.firma)} (${escapeHtml(k.nachname)}, ${escapeHtml(k.vorname)})`;
-                } else {
-                    kundeDisplay = `${escapeHtml(k.nachname)}, ${escapeHtml(k.vorname)}`;
-                }
+                // Wenn Kunde eine Firma hat, zeige Firmenname zuerst, dann den Ansprechpartner
+                let kundeDisplay = k.firma && k.firma.trim() !== ''
+                    ? `${escapeHtml(k.firma)} (${escapeHtml(k.vorname)} ${escapeHtml(k.nachname)})`
+                    : `${escapeHtml(k.nachname)}, ${escapeHtml(k.vorname)}`;
                 selK.innerHTML += `<option value="${k.id}">${kundeDisplay}</option>`;
             });
 
@@ -489,7 +576,7 @@
             const method = id ? 'PUT' : 'POST';
 
             try {
-                const res = await fetch(url, {
+                const res = await authFetch(url, {
                     method: method,
                     headers: {
                         'Content-Type': 'application/json',
@@ -511,7 +598,9 @@
                     alert('Fehler: ' + errorMsg);
                 }
             } catch (error) {
-                alert('Fehler beim Speichern: ' + error);
+                if (!error.message.includes('Session expired')) {
+                    alert('Fehler beim Speichern: ' + error);
+                }
             }
         }
 
@@ -521,7 +610,7 @@
             const id = document.getElementById('eventId').value;
 
             try {
-                await fetch('/termine/' + id, {
+                await authFetch('/termine/' + id, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': 'Bearer ' + localStorage.getItem('token')
@@ -531,7 +620,9 @@
                 closeModal();
                 calendar.refetchEvents();
             } catch (error) {
-                alert('Fehler beim Löschen: ' + error);
+                if (!error.message.includes('Session expired')) {
+                    alert('Fehler beim Löschen: ' + error);
+                }
             }
         }
 
@@ -545,7 +636,7 @@
             };
 
             try {
-                const res = await fetch('/termine/' + event.id, {
+                const res = await authFetch('/termine/' + event.id, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -565,8 +656,10 @@
                     calendar.refetchEvents(); // Revert
                 }
             } catch (error) {
-                alert('Fehler beim Aktualisieren: ' + error);
-                calendar.refetchEvents(); // Revert
+                if (!error.message.includes('Session expired')) {
+                    alert('Fehler beim Aktualisieren: ' + error);
+                    calendar.refetchEvents(); // Revert
+                }
             }
         }
 

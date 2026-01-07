@@ -46,7 +46,15 @@ Module Program
         ' CORS-Konfiguration für Sicherheit
         builder.Services.AddCors(Sub(options)
             options.AddPolicy("AllowFrontend", Function(policy)
-                Return policy.WithOrigins("http://localhost:5000", "https://localhost:5001") _
+                Return policy.SetIsOriginAllowed(Function(origin)
+                    ' Localhost für Entwicklung
+                    If origin.Contains("localhost") Then Return True
+                    ' Coder Workspace Proxy URLs
+                    If origin.Contains("coder.flairtec.de") Then Return True
+                    ' Produktions-Domain
+                    If origin.Contains("sauberfix.flairtec.de") Then Return True
+                    Return False
+                End Function) _
                       .AllowAnyMethod() _
                       .AllowAnyHeader() _
                       .AllowCredentials()
@@ -133,7 +141,15 @@ Module Program
         End Function).RequireAuthorization()
 
         ' KUNDEN
-        app.MapPost("/kunden", Function(s As KundenService, i As CreateKundeDto) Results.Created("/k", s.CreateKunde(i))).RequireAuthorization()
+        app.MapPost("/kunden", Function(s As KundenService, i As CreateKundeDto)
+            Try
+                Return Results.Created("/k", s.CreateKunde(i))
+            Catch ex As ArgumentException
+                Return Results.Problem(ex.Message)
+            Catch ex As Exception
+                Return Results.Problem("Ein Fehler ist beim Erstellen des Kunden aufgetreten.")
+            End Try
+        End Function).RequireAuthorization()
         app.MapGet("/kunden", Function(s As KundenService) s.GetAllKunden()).RequireAuthorization()
         
         ' NEU: Update Kunde
