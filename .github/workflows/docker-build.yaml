@@ -43,3 +43,50 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  deploy-to-kubernetes:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Checkout infrastructure repository
+        uses: actions/checkout@v4
+        with:
+          repository: flairtec-ops/infra
+          token: ${{ secrets.INFRA_REPO_PAT }}
+          path: infra
+
+      - name: Update deployment manifest
+        run: |
+          cd infra
+          # Update image tag to commit SHA
+          IMAGE_TAG="${{ github.sha }}"
+          sed -i "s|ghcr.io/fabian-lindhardt/sauberfix:.*|ghcr.io/fabian-lindhardt/sauberfix:${IMAGE_TAG}|g" apps/sauberfix/k8s/deployment.yaml
+
+          # Configure git
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+
+          # Commit and push
+          git add apps/sauberfix/k8s/deployment.yaml
+
+          # Only commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore(sauberfix): Update image to ${IMAGE_TAG}
+
+          Triggered by: ${{ github.event.head_commit.message }}
+          Commit: ${{ github.sha }}
+          Author: ${{ github.actor }}"
+            git push
+            echo "✅ Deployment manifest updated successfully"
+          fi
+
+      - name: Deployment info
+        run: |
+          echo "🚀 Image pushed: ghcr.io/fabian-lindhardt/sauberfix:${{ github.sha }}"
+          echo "📝 Manifest updated in infra repository"
+          echo "🔄 ArgoCD will automatically sync the new version"
+          echo "📊 Monitor at: https://argo.flairtec.de"
