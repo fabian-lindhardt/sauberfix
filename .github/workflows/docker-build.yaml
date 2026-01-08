@@ -60,9 +60,10 @@ jobs:
       - name: Update deployment manifest
         run: |
           cd infra
-          # Update image tag to commit SHA
+          # Update image tag to short commit SHA (7 characters to match docker metadata-action)
           IMAGE_TAG="${{ github.sha }}"
-          sed -i "s|ghcr.io/fabian-lindhardt/sauberfix:.*|ghcr.io/fabian-lindhardt/sauberfix:${IMAGE_TAG}|g" apps/sauberfix/k8s/deployment.yaml
+          SHORT_SHA="${IMAGE_TAG:0:7}"
+          sed -i "s|ghcr.io/fabian-lindhardt/sauberfix:.*|ghcr.io/fabian-lindhardt/sauberfix:${SHORT_SHA}|g" apps/sauberfix/k8s/deployment.yaml
 
           # Configure git
           git config user.name "GitHub Actions Bot"
@@ -75,7 +76,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "chore(sauberfix): Update image to ${IMAGE_TAG}
+            git commit -m "chore(sauberfix): Update image to ${SHORT_SHA}
 
           Triggered by: ${{ github.event.head_commit.message }}
           Commit: ${{ github.sha }}
@@ -86,7 +87,9 @@ jobs:
 
       - name: Deployment info
         run: |
-          echo "🚀 Image pushed: ghcr.io/fabian-lindhardt/sauberfix:${{ github.sha }}"
+          SHORT_SHA="${{ github.sha }}"
+          SHORT_SHA="${SHORT_SHA:0:7}"
+          echo "🚀 Image pushed: ghcr.io/fabian-lindhardt/sauberfix:${SHORT_SHA}"
           echo "📝 Manifest updated in infra repository"
           echo "🔄 ArgoCD will automatically sync the new version"
           echo "📊 Monitor at: https://argo.flairtec.de"
