@@ -5,33 +5,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SauberFix Terminplanung</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; max-width: 1200px; margin: 2rem auto; padding: 0 1rem; background-color: #f4f4f9; color: #333; }
+        :root {
+            --bg-primary: #f4f4f9;
+            --bg-card: white;
+            --bg-table: white;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --border-color: #e1e4e8;
+            --border-input: #ccc;
+            --accent: #007bff;
+            --accent-hover: #0056b3;
+            --th-bg: #007bff;
+            --th-text: white;
+            --td-border: #eee;
+            --shadow: rgba(0,0,0,0.05);
+        }
+        [data-theme="dark"] {
+            --bg-primary: #1a1a2e;
+            --bg-card: #16213e;
+            --bg-table: #16213e;
+            --text-primary: #e8e8e8;
+            --text-secondary: #a0a0a0;
+            --border-color: #2a2a4a;
+            --border-input: #3a3a5a;
+            --accent: #4dabf7;
+            --accent-hover: #339af0;
+            --th-bg: #0f3460;
+            --th-text: #e8e8e8;
+            --td-border: #2a2a4a;
+            --shadow: rgba(0,0,0,0.3);
+        }
+        body { font-family: 'Segoe UI', sans-serif; max-width: 1200px; margin: 2rem auto; padding: 0 1rem; background-color: var(--bg-primary); color: var(--text-primary); transition: background-color 0.3s, color 0.3s; }
         .hidden { display: none; }
-        .card { background: white; border: 1px solid #e1e4e8; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        h1 { color: #0056b3; }
-        input, select, button { padding: 0.6rem; margin-bottom: 0.6rem; width: 100%; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        button { cursor: pointer; background: #007bff; color: white; border: none; font-weight: 600; }
-        button:hover { background: #0056b3; }
+        .card { background: var(--bg-card); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 6px var(--shadow); transition: background-color 0.3s, border-color 0.3s; }
+        h1 { color: var(--accent); }
+        h2, h3 { color: var(--text-primary); }
+        input, select { padding: 0.6rem; margin-bottom: 0.6rem; width: 100%; box-sizing: border-box; border: 1px solid var(--border-input); border-radius: 4px; background: var(--bg-card); color: var(--text-primary); transition: background-color 0.3s, border-color 0.3s, color 0.3s; }
+        input::placeholder { color: var(--text-secondary); }
+        button { padding: 0.6rem; margin-bottom: 0.6rem; width: 100%; box-sizing: border-box; border-radius: 4px; cursor: pointer; background: var(--accent); color: white; border: none; font-weight: 600; transition: background-color 0.3s; }
+        button:hover { background: var(--accent-hover); }
         button.secondary { background: #6c757d; }
+        button.secondary:hover { background: #5a6268; }
         button.delete { background: #dc3545; width: auto; padding: 0.3rem 0.6rem; font-size: 0.85rem; margin-right: 5px; }
+        button.delete:hover { background: #c82333; }
         button.edit { background: #ffc107; color: black; width: auto; padding: 0.3rem 0.6rem; font-size: 0.85rem; }
+        button.edit:hover { background: #e0a800; }
         .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-        table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: white; }
-        th { background: #007bff; color: white; padding: 0.8rem; text-align: left; }
-        td { padding: 0.8rem; border-bottom: 1px solid #eee; }
-        .email-sent { color: green; font-weight: bold; }
-        .email-wait { color: orange; }
-        .msg-success { color: green; font-weight: bold; margin-top: 5px; }
-        .msg-error { color: red; font-weight: bold; margin-top: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: var(--bg-table); transition: background-color 0.3s; }
+        th { background: var(--th-bg); color: var(--th-text); padding: 0.8rem; text-align: left; transition: background-color 0.3s; }
+        td { padding: 0.8rem; border-bottom: 1px solid var(--td-border); color: var(--text-primary); transition: border-color 0.3s, color 0.3s; }
+        td a { color: var(--accent); }
+        .email-sent { color: #28a745; font-weight: bold; }
+        .email-wait { color: #fd7e14; }
+        .msg-success { color: #28a745; font-weight: bold; margin-top: 5px; }
+        .msg-error { color: #dc3545; font-weight: bold; margin-top: 5px; }
+        .theme-toggle { background: transparent; border: 2px solid var(--accent); color: var(--accent); width: auto; padding: 0.4rem 0.8rem; font-size: 1.2rem; cursor: pointer; border-radius: 50%; margin-right: 10px; }
+        .theme-toggle:hover { background: var(--accent); color: white; }
+        label { color: var(--text-primary); }
     </style>
 </head>
 <body>
-    <div style="display:flex; justify-content:space-between;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
         <h1>🧹 SauberFix Terminplanung</h1>
-        <div id="userInfo" class="hidden">
-            <span id="welcomeMsg"></span>
-            <button onclick="window.location.href='scheduler.html'" class="secondary" style="width:auto;">📅 Kalender</button>
-            <button onclick="logout()" class="secondary" style="width:auto;">Abmelden</button>
+        <div style="display:flex; align-items:center;">
+            <button class="theme-toggle" onclick="toggleTheme()" title="Dark Mode umschalten">🌙</button>
+            <div id="userInfo" class="hidden">
+                <span id="welcomeMsg"></span>
+                <button onclick="window.location.href='scheduler.html'" class="secondary" style="width:auto;">📅 Kalender</button>
+                <button onclick="logout()" class="secondary" style="width:auto;">Abmelden</button>
+            </div>
         </div>
     </div>
 
@@ -110,6 +152,31 @@
     </div>
 
     <script>
+        // ===== DARK MODE =====
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+
+        function updateThemeIcon(theme) {
+            const btn = document.querySelector('.theme-toggle');
+            if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+
+        // Load saved theme on page load
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+            // Update icon after DOM is ready
+            document.addEventListener('DOMContentLoaded', () => updateThemeIcon(savedTheme));
+        })();
+
         // ===== SECURITY: XSS Protection =====
         function escapeHtml(text) {
             if (!text) return '';

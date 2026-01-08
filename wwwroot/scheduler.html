@@ -6,25 +6,52 @@
     <title>SauberFix Terminplaner</title>
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar-scheduler@6.1.19/index.global.min.js'></script>
     <style>
+        :root {
+            --bg-primary: #f4f4f9;
+            --bg-card: white;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --border-color: #e1e4e8;
+            --border-input: #ccc;
+            --accent: #007bff;
+            --accent-hover: #0056b3;
+            --shadow: rgba(0,0,0,0.1);
+            --modal-bg: rgba(0,0,0,0.5);
+        }
+        [data-theme="dark"] {
+            --bg-primary: #1a1a2e;
+            --bg-card: #16213e;
+            --text-primary: #e8e8e8;
+            --text-secondary: #a0a0a0;
+            --border-color: #2a2a4a;
+            --border-input: #3a3a5a;
+            --accent: #4dabf7;
+            --accent-hover: #339af0;
+            --shadow: rgba(0,0,0,0.3);
+            --modal-bg: rgba(0,0,0,0.7);
+        }
         body {
             font-family: 'Segoe UI', sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f4f4f9;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
         }
         .header {
-            background: white;
+            background: var(--bg-card);
             padding: 15px 20px;
             margin-bottom: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px var(--shadow);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: background-color 0.3s;
         }
         .header h1 {
             margin: 0;
-            color: #0056b3;
+            color: var(--accent);
             font-size: 24px;
         }
         .user-info {
@@ -41,11 +68,11 @@
             transition: background 0.3s;
         }
         .btn-primary {
-            background: #007bff;
+            background: var(--accent);
             color: white;
         }
         .btn-primary:hover {
-            background: #0056b3;
+            background: var(--accent-hover);
         }
         .btn-secondary {
             background: #6c757d;
@@ -55,31 +82,39 @@
             background: #545b62;
         }
         #calendar {
-            background: white;
+            background: var(--bg-card);
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px var(--shadow);
             height: calc(100vh - 150px);
+            transition: background-color 0.3s;
         }
         .login-container {
             max-width: 400px;
             margin: 100px auto;
-            background: white;
+            background: var(--bg-card);
             padding: 30px;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px var(--shadow);
+            transition: background-color 0.3s;
         }
         .login-container h2 {
             margin-top: 0;
-            color: #0056b3;
+            color: var(--accent);
         }
         .login-container input {
             width: 100%;
             padding: 10px;
             margin-bottom: 15px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--border-input);
             border-radius: 4px;
             box-sizing: border-box;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+        }
+        .login-container input::placeholder {
+            color: var(--text-secondary);
         }
         .hidden { display: none; }
 
@@ -92,16 +127,17 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.5);
+            background-color: var(--modal-bg);
         }
         .modal-content {
-            background-color: white;
+            background-color: var(--bg-card);
             margin: 5% auto;
             padding: 30px;
             border-radius: 8px;
             width: 90%;
             max-width: 500px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 20px var(--shadow);
+            transition: background-color 0.3s;
         }
         .modal-header {
             display: flex;
@@ -111,16 +147,16 @@
         }
         .modal-header h2 {
             margin: 0;
-            color: #0056b3;
+            color: var(--accent);
         }
         .close {
             font-size: 28px;
             font-weight: bold;
-            color: #aaa;
+            color: var(--text-secondary);
             cursor: pointer;
         }
         .close:hover {
-            color: #000;
+            color: var(--text-primary);
         }
         .form-group {
             margin-bottom: 15px;
@@ -129,15 +165,18 @@
             display: block;
             margin-bottom: 5px;
             font-weight: 600;
-            color: #333;
+            color: var(--text-primary);
         }
         .form-group input, .form-group select, .form-group textarea {
             width: 100%;
             padding: 10px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--border-input);
             border-radius: 4px;
             box-sizing: border-box;
             font-family: inherit;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            transition: background-color 0.3s, border-color 0.3s, color 0.3s;
         }
         .form-group textarea {
             resize: vertical;
@@ -158,6 +197,58 @@
         .modal-actions button {
             flex: 1;
         }
+        .theme-toggle {
+            background: transparent;
+            border: 2px solid var(--accent);
+            color: var(--accent);
+            padding: 6px 12px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        .theme-toggle:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* FullCalendar Dark Mode Overrides */
+        [data-theme="dark"] .fc {
+            --fc-border-color: #2a2a4a;
+            --fc-page-bg-color: #16213e;
+            --fc-neutral-bg-color: #1a1a2e;
+            --fc-list-event-hover-bg-color: #2a2a4a;
+            --fc-today-bg-color: rgba(77, 171, 247, 0.15);
+        }
+        [data-theme="dark"] .fc-theme-standard td,
+        [data-theme="dark"] .fc-theme-standard th {
+            border-color: #2a2a4a;
+        }
+        [data-theme="dark"] .fc-col-header-cell-cushion,
+        [data-theme="dark"] .fc-daygrid-day-number,
+        [data-theme="dark"] .fc-timegrid-slot-label-cushion {
+            color: var(--text-primary);
+        }
+        [data-theme="dark"] .fc-toolbar-title {
+            color: var(--text-primary);
+        }
+        [data-theme="dark"] .fc-button {
+            background-color: var(--accent);
+            border-color: var(--accent);
+        }
+        [data-theme="dark"] .fc-button:hover {
+            background-color: var(--accent-hover);
+            border-color: var(--accent-hover);
+        }
+        [data-theme="dark"] .fc-button-active {
+            background-color: var(--accent-hover) !important;
+            border-color: var(--accent-hover) !important;
+        }
+        [data-theme="dark"] .fc-datagrid-cell-frame {
+            background-color: #16213e;
+        }
+        [data-theme="dark"] .fc-resource-timeline .fc-datagrid-cell-cushion {
+            color: var(--text-primary);
+        }
     </style>
 </head>
 <body>
@@ -176,6 +267,7 @@
         <div class="header">
             <h1>🧹 SauberFix Terminplaner</h1>
             <div class="user-info">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Dark Mode umschalten">🌙</button>
                 <span id="welcomeMsg"></span>
                 <button class="btn-primary" onclick="window.location.href='index.html'">Tabelle</button>
                 <button class="btn-secondary" onclick="logout()">Abmelden</button>
@@ -229,6 +321,30 @@
     </div>
 
     <script>
+        // ===== DARK MODE =====
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+
+        function updateThemeIcon(theme) {
+            const btn = document.querySelector('.theme-toggle');
+            if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+
+        // Load saved theme on page load
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+            document.addEventListener('DOMContentLoaded', () => updateThemeIcon(savedTheme));
+        })();
+
         // ===== SECURITY: XSS Protection =====
         function escapeHtml(text) {
             if (!text) return '';
