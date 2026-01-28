@@ -50,6 +50,11 @@ jobs:
     if: github.ref == 'refs/heads/master'
 
     steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+        with:
+          path: source
+
       - name: Checkout infrastructure repository
         uses: actions/checkout@v4
         with:
@@ -66,7 +71,7 @@ jobs:
           
           # Sync deployment.yaml from source repo to infra repo (maintain Single Source of Truth)
           # We copy the file and THEN replace the image tag
-          cp ../k8s/deployment.yaml apps/sauberfix/k8s/deployment.yaml
+          cp ../source/k8s/deployment.yaml apps/sauberfix/k8s/deployment.yaml
           
           sed -i "s|ghcr.io/fabian-lindhardt/sauberfix:.*|ghcr.io/fabian-lindhardt/sauberfix:${SHORT_SHA}|g" apps/sauberfix/k8s/deployment.yaml
 
