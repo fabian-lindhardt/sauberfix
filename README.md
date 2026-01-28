@@ -433,6 +433,20 @@ Bei jedem Push auf `main` oder `master` wird automatisch:
 2. Image nach `ghcr.io/fabian-lindhardt/sauberfix` gepusht
 3. Tags: `latest` und Commit-SHA
 
+### Produktions-Secrets (WICHTIG)
+
+Da das SMTP-Passwort sensibel ist, darf es nicht im Git-Repository gespeichert werden. Es wird über ein Kubernetes Secret in die Anwendung injiziert.
+
+**Secret erstellen:**
+Vor dem ersten Deployment muss das Secret im Cluster angelegt werden (replace `YOUR_PASSWORD`):
+
+```bash
+kubectl create secret generic sauberfix-secrets \
+  --from-literal=smtp-password='YOUR_PASSWORD'
+```
+
+Das Deployment (`k8s/deployment.yaml`) liest diesen Wert dann automatisch in die Umgebungsvariable `SmtpSettings__Password`.
+
 ---
 
 ## Projektstruktur
