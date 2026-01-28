@@ -60,9 +60,14 @@ jobs:
       - name: Update deployment manifest
         run: |
           cd infra
-          # Update image tag to short commit SHA (7 characters to match docker metadata-action)
+          # Update image tag to short commit SHA
           IMAGE_TAG="${{ github.sha }}"
           SHORT_SHA="${IMAGE_TAG:0:7}"
+          
+          # Sync deployment.yaml from source repo to infra repo (maintain Single Source of Truth)
+          # We copy the file and THEN replace the image tag
+          cp ../k8s/deployment.yaml apps/sauberfix/k8s/deployment.yaml
+          
           sed -i "s|ghcr.io/fabian-lindhardt/sauberfix:.*|ghcr.io/fabian-lindhardt/sauberfix:${SHORT_SHA}|g" apps/sauberfix/k8s/deployment.yaml
 
           # Configure git
