@@ -93,7 +93,18 @@ Namespace Services
 
                                 Using client = New SmtpClient()
                                     Dim server = _configuration("SmtpSettings:Server")
-                                    Dim port = Integer.Parse(_configuration("SmtpSettings:Port"))
+                                    Dim portStr = _configuration("SmtpSettings:Port")
+                                    Dim port As Integer = 587
+
+                                    If String.IsNullOrEmpty(server) Then
+                                        _logger.LogError("KONFIG ERROR: SmtpSettings:Server ist LEER! Nutze Fallback.")
+                                        server = "smtp.flairtec.de"
+                                    End If
+
+                                    If String.IsNullOrEmpty(portStr) OrElse Not Integer.TryParse(portStr, port) Then
+                                        _logger.LogError($"KONFIG ERROR: SmtpSettings:Port ist '{portStr}'! Nutze Fallback 587.")
+                                        port = 587
+                                    End If
                                     
                                     ' Connect(host, port, useSsl) -> useSsl=False for Port 25 usually. Auto for other.
                                     
