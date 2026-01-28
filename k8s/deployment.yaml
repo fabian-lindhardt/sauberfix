@@ -33,6 +33,21 @@ spec:
           value: "SauberfixAPI"
         - name: JwtSettings__Audience
           value: "SauberfixClient"
+        - name: SmtpSettings__Server
+          value: "smtp.flairtec.de"
+        - name: SmtpSettings__Port
+          value: "587"
+        - name: SmtpSettings__SenderName
+          value: "Sauberfix Erinnerung"
+        - name: SmtpSettings__SenderEmail
+          value: "noreply@flairtec.de"
+        - name: SmtpSettings__Username
+          value: "noreply@flairtec.de"
+        - name: SmtpSettings__Password
+          valueFrom:
+            secretKeyRef:
+              name: sauberfix-secrets
+              key: smtp-password
         resources:
           requests:
             memory: "128Mi"

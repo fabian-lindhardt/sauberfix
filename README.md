@@ -465,26 +465,48 @@ sauberfix/
 
 ---
 
-## Fehlerbehebung
+## Fehlerbehebung & Technische Herausforderungen
+(Projektdokumentation / Pflichtenheftnachweis)
 
-### Häufige Probleme
+### 1. SMTP E-Mail-Versand
+**Problem:** Der E-Mail-Versand schlug Initial fehl (`5.7.1 Message does not meet delivery requirements`).
+**Ursache:**
+- Port 25 (Standard SMTP) erlaubt oft keine authentifizierte Übermittlung (Submission).
+- Der Server `smtp.flairtec.de` verlangt Authentifizierung (`AUTH LOGIN`), die auf Port 25 deaktiviert war oder blockiert wurde.
+**Lösung:**
+- Umstellung auf **Port 587** (STARTTLS).
+- Implementierung der Authentifizierung mit Benutzername und Passwort via `MailKit`.
 
-**Problem:** Login schlägt fehl
-- Prüfen Sie Benutzername und Passwort
-- Stellen Sie sicher, dass die Datenbank erreichbar ist
-- Prüfen Sie die JWT-Konfiguration
+### 2. SSL/TLS Zertifikatsfehler
+**Problem:** `SslHandshakeException: The host name (smtp.flairtec.de) did not match the name given in the server's SSL certificate (mx01.flairtec.de).`
+**Ursache:** Der Mailserver meldet sich mit seinem Hostnamen (`mx01`), während der Client (`smtp`) eine andere Domain erwartet. Dies ist bei Shared-Hosting-Umgebungen häufig.
+**Lösung:**
+- Deaktivierung der strikten Hostnamen-Prüfung im `ErinnerungsService`:
+  ```vb
+  client.CheckCertificateRevocation = False
+  client.ServerCertificateValidationCallback = Function(s, c, h, e) True
+  ```
 
-**Problem:** Termine werden nicht angezeigt
-- Bei User-Rolle: Nur eigene Termine sind sichtbar
-- Prüfen Sie den Authentifizierungs-Token
+### 3. Zeitzonen-Problematik (Timezones)
+**Problem:** Erinnerungs-Emails wurden nicht versendet, obwohl der Zeitpunkt rechnerisch erreicht war.
+**Ursache:**
+- **Datenbank:** Speichert `timestamp without time zone` (Unspecified).
+- **Benutzer:** Gibt Termin in lokaler Zeit (Deutschland, UTC+1/UTC+2) ein.
+- **Server/Container:** Läuft in UTC.
+- **Folge:** Ein Termin um 09:00 wurde als 09:00 UTC interpretiert, obwohl der User 09:00 DE (08:00 UTC) meinte. Der Vergleich `Trigger <= Now` schlug fehl.
+**Lösung:**
+- Explizite Umrechnung der aktuellen Serverzeit (`DateTime.UtcNow`) in die Zielzeitzone (`Europe/Berlin`) vor dem Vergleich.
+- Die Datenbankzeit wird nun als "Deutsche Zeit" interpretiert und mit der "Deutschen Jetzt-Zeit" verglichen.
 
-**Problem:** Kollisionsfehler beim Termin erstellen
-- Der Mitarbeiter hat bereits einen Termin zur gewählten Zeit
-- Wählen Sie einen anderen Zeitraum oder Mitarbeiter
-
-**Problem:** CORS-Fehler
-- Stellen Sie sicher, dass die Domain in der CORS-Konfiguration erlaubt ist
-- Bei Coder-Workspace: Neue Session starten
+### 4. Verbindungsprobleme (IPv4/IPv6)
+**Problem:** Nach `dotnet run` war die Anwendung unter `localhost:5000` nicht erreichbar ("Connection refused").
+**Ursache:** Kestrel bindete standardmäßig nur auf Localhost-Interfaces, was in Container-Umgebungen Probleme bereiten kann.
+**Lösung:**
+- Explizites Binding auf `0.0.0.0` in `appsettings.json`:
+  ```json
+  "Url": "http://0.0.0.0:5000"
+  ```
+- Dies erlaubt Zugriffe von allen Netzwerkschnittstellen (IPv4).
 
 ---
 
