@@ -27,14 +27,21 @@ Namespace Services
                     Using scope = _serviceScopeFactory.CreateScope()
                         Dim db = scope.ServiceProvider.GetRequiredService(Of AppDbContext)()
 
-                        ' Logic: Termine morgen, die noch KEINE Mail bekommen haben
-                        Dim morgen = DateTime.UtcNow.AddDays(1)
-                        Dim startZeit = morgen.AddMinutes(-2) 
-                        Dim endZeit = morgen.AddMinutes(2)
-
+                        ' Logic: Termin.DatumUhrzeit - Termin.Vorlauf <= Now (e.g. 10:00 - 24h = Yesterday 10:00. If Now >= Yesterday 10:00, Send).
+                        ' But we only want to send if we haven't sent yet, and if the appointment is in the future (optional, but good practice).
+                        ' Implementation: t.DatumUhrzeit.AddMinutes(-t.ErinnerungVorlaufMinuten) <= DateTime.UtcNow
+                        
+                        Dim now = DateTime.UtcNow
+                        
+                        ' Wir nutzen EF.Functions oder client-side evaluation, falls Provider AddMinutes mit Spalte nicht unterstützt.
+                        ' Postgres Npgsql unterstützt Arithmetik meist gut.
+                        
                         Dim fälligeTermine = db.Termine _
                                                .Include(Function(t) t.Kunde) _
-                                               .Where(Function(t) t.DatumUhrzeit >= startZeit AndAlso t.DatumUhrzeit <= endZeit AndAlso t.Status = TerminStatus.Geplant AndAlso t.ErinnerungVerschickt = False) _
+                                               .Where(Function(t) t.Status = TerminStatus.Geplant _
+                                                              AndAlso t.ErinnerungVerschickt = False _
+                                                              AndAlso t.DatumUhrzeit.AddMinutes(-t.ErinnerungVorlaufMinuten) <= now _
+                                                              AndAlso t.DatumUhrzeit > now) _
                                                .ToList()
 
                         For Each t In fälligeTermine

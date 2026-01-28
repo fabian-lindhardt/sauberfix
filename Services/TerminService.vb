@@ -28,6 +28,7 @@ Namespace Services
                 .KundeId = input.KundeId,
                 .MitarbeiterId = input.MitarbeiterId,
                 .Status = TerminStatus.Geplant,
+                .ErinnerungVorlaufMinuten = input.ErinnerungVorlaufMinuten,
                 .ErstelltAm = DateTime.UtcNow
             }
 
@@ -47,6 +48,7 @@ Namespace Services
             t.Beschreibung = input.Beschreibung
             t.KundeId = input.KundeId
             t.MitarbeiterId = input.MitarbeiterId
+            t.ErinnerungVorlaufMinuten = input.ErinnerungVorlaufMinuten
 
             _db.SaveChanges()
             Return GetOne(t.Id)
@@ -108,7 +110,8 @@ Namespace Services
                 .KundeFirma = If(t.Kunde IsNot Nothing, t.Kunde.Firma, ""),
                 .MitarbeiterId = t.MitarbeiterId,
                 .MitarbeiterName = If(t.Mitarbeiter IsNot Nothing, t.Mitarbeiter.Vorname & " " & t.Mitarbeiter.Nachname, "?"),
-                .ErinnerungVerschickt = t.ErinnerungVerschickt
+                .ErinnerungVerschickt = t.ErinnerungVerschickt,
+                .ErinnerungVorlaufMinuten = t.ErinnerungVorlaufMinuten
             }
         End Function
     End Class

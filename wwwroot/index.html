@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,8 +19,9 @@
             --th-bg: #007bff;
             --th-text: white;
             --td-border: #eee;
-            --shadow: rgba(0,0,0,0.05);
+            --shadow: rgba(0, 0, 0, 0.05);
         }
+
         [data-theme="dark"] {
             --bg-primary: #1a1a2e;
             --bg-card: #16213e;
@@ -33,37 +35,186 @@
             --th-bg: #0f3460;
             --th-text: #e8e8e8;
             --td-border: #2a2a4a;
-            --shadow: rgba(0,0,0,0.3);
+            --shadow: rgba(0, 0, 0, 0.3);
         }
-        body { font-family: 'Segoe UI', sans-serif; max-width: 1200px; margin: 2rem auto; padding: 0 1rem; background-color: var(--bg-primary); color: var(--text-primary); transition: background-color 0.3s, color 0.3s; }
-        .hidden { display: none; }
-        .card { background: var(--bg-card); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 6px var(--shadow); transition: background-color 0.3s, border-color 0.3s; }
-        h1 { color: var(--accent); }
-        h2, h3 { color: var(--text-primary); }
-        input, select { padding: 0.6rem; margin-bottom: 0.6rem; width: 100%; box-sizing: border-box; border: 1px solid var(--border-input); border-radius: 4px; background: var(--bg-card); color: var(--text-primary); transition: background-color 0.3s, border-color 0.3s, color 0.3s; }
-        input::placeholder { color: var(--text-secondary); }
-        button { padding: 0.6rem; margin-bottom: 0.6rem; width: 100%; box-sizing: border-box; border-radius: 4px; cursor: pointer; background: var(--accent); color: white; border: none; font-weight: 600; transition: background-color 0.3s; }
-        button:hover { background: var(--accent-hover); }
-        button.secondary { background: #6c757d; }
-        button.secondary:hover { background: #5a6268; }
-        button.delete { background: #dc3545; width: auto; padding: 0.3rem 0.6rem; font-size: 0.85rem; margin-right: 5px; }
-        button.delete:hover { background: #c82333; }
-        button.edit { background: #ffc107; color: black; width: auto; padding: 0.3rem 0.6rem; font-size: 0.85rem; }
-        button.edit:hover { background: #e0a800; }
-        .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-        table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: var(--bg-table); transition: background-color 0.3s; }
-        th { background: var(--th-bg); color: var(--th-text); padding: 0.8rem; text-align: left; transition: background-color 0.3s; }
-        td { padding: 0.8rem; border-bottom: 1px solid var(--td-border); color: var(--text-primary); transition: border-color 0.3s, color 0.3s; }
-        td a { color: var(--accent); }
-        .email-sent { color: #28a745; font-weight: bold; }
-        .email-wait { color: #fd7e14; }
-        .msg-success { color: #28a745; font-weight: bold; margin-top: 5px; }
-        .msg-error { color: #dc3545; font-weight: bold; margin-top: 5px; }
-        .theme-toggle { background: transparent; border: 2px solid var(--accent); color: var(--accent); width: auto; padding: 0.4rem 0.8rem; font-size: 1.2rem; cursor: pointer; border-radius: 50%; margin-right: 10px; }
-        .theme-toggle:hover { background: var(--accent); color: white; }
-        label { color: var(--text-primary); }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px var(--shadow);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        h1 {
+            color: var(--accent);
+        }
+
+        h2,
+        h3 {
+            color: var(--text-primary);
+        }
+
+        input,
+        select {
+            padding: 0.6rem;
+            margin-bottom: 0.6rem;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid var(--border-input);
+            border-radius: 4px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+        }
+
+        input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        button {
+            padding: 0.6rem;
+            margin-bottom: 0.6rem;
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 4px;
+            cursor: pointer;
+            background: var(--accent);
+            color: white;
+            border: none;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+        }
+
+        button.secondary {
+            background: #6c757d;
+        }
+
+        button.secondary:hover {
+            background: #5a6268;
+        }
+
+        button.delete {
+            background: #dc3545;
+            width: auto;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.85rem;
+            margin-right: 5px;
+        }
+
+        button.delete:hover {
+            background: #c82333;
+        }
+
+        button.edit {
+            background: #ffc107;
+            color: black;
+            width: auto;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.85rem;
+        }
+
+        button.edit:hover {
+            background: #e0a800;
+        }
+
+        .admin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            background: var(--bg-table);
+            transition: background-color 0.3s;
+        }
+
+        th {
+            background: var(--th-bg);
+            color: var(--th-text);
+            padding: 0.8rem;
+            text-align: left;
+            transition: background-color 0.3s;
+        }
+
+        td {
+            padding: 0.8rem;
+            border-bottom: 1px solid var(--td-border);
+            color: var(--text-primary);
+            transition: border-color 0.3s, color 0.3s;
+        }
+
+        td a {
+            color: var(--accent);
+        }
+
+        .email-sent {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .email-wait {
+            color: #fd7e14;
+        }
+
+        .msg-success {
+            color: #28a745;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .msg-error {
+            color: #dc3545;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .theme-toggle {
+            background: transparent;
+            border: 2px solid var(--accent);
+            color: var(--accent);
+            width: auto;
+            padding: 0.4rem 0.8rem;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .theme-toggle:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        label {
+            color: var(--text-primary);
+        }
     </style>
 </head>
+
 <body>
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <h1>🧹 SauberFix Terminplanung</h1>
@@ -71,7 +222,8 @@
             <button class="theme-toggle" onclick="toggleTheme()" title="Dark Mode umschalten">🌙</button>
             <div id="userInfo" class="hidden">
                 <span id="welcomeMsg"></span>
-                <button onclick="window.location.href='scheduler.html'" class="secondary" style="width:auto;">📅 Kalender</button>
+                <button onclick="window.location.href='scheduler.html'" class="secondary" style="width:auto;">📅
+                    Kalender</button>
                 <button onclick="logout()" class="secondary" style="width:auto;">Abmelden</button>
             </div>
         </div>
@@ -92,12 +244,15 @@
                 <div class="card">
                     <h3 id="lblKunde">👥 Neuer Kunde</h3>
                     <input type="hidden" id="editK_Id" />
-                    <div style="display:flex; gap:5px;"><input type="text" id="nk_Vor" placeholder="Vorname" /><input type="text" id="nk_Nach" placeholder="Nachname" /></div>
+                    <div style="display:flex; gap:5px;"><input type="text" id="nk_Vor" placeholder="Vorname" /><input
+                            type="text" id="nk_Nach" placeholder="Nachname" /></div>
                     <input type="text" id="nk_Firma" placeholder="Firma (optional)" />
                     <input type="text" id="nk_Strasse" placeholder="Straße & Hausnr." />
-                    <div style="display:flex; gap:5px;"><input type="text" id="nk_Plz" placeholder="PLZ" style="width:80px;" /><input type="text" id="nk_Stadt" placeholder="Stadt" /></div>
-                    <input type="email" id="nk_Email" placeholder="E-Mail Adresse" /><input type="text" id="nk_Tel" placeholder="Telefonnummer" />
-                    
+                    <div style="display:flex; gap:5px;"><input type="text" id="nk_Plz" placeholder="PLZ"
+                            style="width:80px;" /><input type="text" id="nk_Stadt" placeholder="Stadt" /></div>
+                    <input type="email" id="nk_Email" placeholder="E-Mail Adresse" /><input type="text" id="nk_Tel"
+                        placeholder="Telefonnummer" />
+
                     <button id="btnKunde" onclick="saveKunde()">Kunde speichern</button>
                     <button id="btnCancelK" onclick="resetKundeForm()" class="secondary hidden">Abbrechen</button>
                     <p id="msgKunde"></p>
@@ -111,6 +266,8 @@
                     <label>Was?</label><input type="text" id="newT_Desc" placeholder="Beschreibung" />
                     <label>Bei wem?</label><select id="newT_Kunde"></select>
                     <label>Wer macht's?</label><select id="newT_MA"></select>
+                    <label>Erinnerung (Stunden vorher)</label><input type="number" id="newT_Remind" value="24" min="0"
+                        step="0.5" />
 
                     <button id="btnTermin" onclick="saveTermin()">Termin buchen</button>
                     <button id="btnCancelT" onclick="resetTerminForm()" class="secondary hidden">Abbrechen</button>
@@ -122,32 +279,69 @@
                     <input type="hidden" id="editM_Id" />
                     <input type="text" id="newM_User" placeholder="Username" />
                     <input type="password" id="newM_Pass" placeholder="Passwort" />
-                    <div style="display:flex; gap:5px;"><input type="text" id="newM_Vor" placeholder="Vorname" /><input type="text" id="newM_Nach" placeholder="Nachname" /></div>
-                    <select id="newM_Rolle"><option value="User">Mitarbeiter (User)</option><option value="Admin">Verwaltung (Admin)</option></select>
-                    
+                    <div style="display:flex; gap:5px;"><input type="text" id="newM_Vor" placeholder="Vorname" /><input
+                            type="text" id="newM_Nach" placeholder="Nachname" /></div>
+                    <select id="newM_Rolle">
+                        <option value="User">Mitarbeiter (User)</option>
+                        <option value="Admin">Verwaltung (Admin)</option>
+                    </select>
+
                     <button id="btnMA" onclick="saveMitarbeiter()">Mitarbeiter anlegen</button>
                     <button id="btnCancelM" onclick="resetMitarbeiterForm()" class="secondary hidden">Abbrechen</button>
                     <p id="msgMitarbeiter"></p>
                 </div>
             </div>
-            
+
             <div class="card" style="margin-bottom:1rem;">
                 <h3>Kunden Übersicht</h3>
-                <table><thead><tr><th>Kunde</th><th>Adresse</th><th>Email</th><th>Telefon</th><th>Aktion</th></tr></thead><tbody id="kundenTable"></tbody></table>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Kunde</th>
+                            <th>Adresse</th>
+                            <th>Email</th>
+                            <th>Telefon</th>
+                            <th>Aktion</th>
+                        </tr>
+                    </thead>
+                    <tbody id="kundenTable"></tbody>
+                </table>
             </div>
         </div>
 
         <div class="card">
-            <div style="display:flex; justify-content:space-between;"><h3>Aktuelle Termine</h3><button onclick="loadTermine()" style="width:auto;">🔄 Aktualisieren</button></div>
+            <div style="display:flex; justify-content:space-between;">
+                <h3>Aktuelle Termine</h3><button onclick="loadTermine()" style="width:auto;">🔄 Aktualisieren</button>
+            </div>
             <table>
-                <thead><tr><th>Start</th><th>Ende</th><th>Beschreibung</th><th>Kunde</th><th>Mitarbeiter</th><th>Status</th><th>Aktion</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th>Start</th>
+                        <th>Ende</th>
+                        <th>Beschreibung</th>
+                        <th>Kunde</th>
+                        <th>Mitarbeiter</th>
+                        <th>Status</th>
+                        <th>Aktion</th>
+                    </tr>
+                </thead>
                 <tbody id="termineTable"></tbody>
             </table>
         </div>
-        
+
         <div id="maListCard" class="card hidden" style="margin-top:1rem;">
-             <h3>Mitarbeiter Übersicht</h3>
-             <table><thead><tr><th>User</th><th>Name</th><th>Rolle</th><th>Aktion</th></tr></thead><tbody id="maTable"></tbody></table>
+            <h3>Mitarbeiter Übersicht</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Name</th>
+                        <th>Rolle</th>
+                        <th>Aktion</th>
+                    </tr>
+                </thead>
+                <tbody id="maTable"></tbody>
+            </table>
         </div>
     </div>
 
@@ -168,7 +362,7 @@
         }
 
         // Load saved theme on page load
-        (function() {
+        (function () {
             const savedTheme = localStorage.getItem('theme') || 'light';
             if (savedTheme === 'dark') {
                 document.documentElement.setAttribute('data-theme', 'dark');
@@ -186,15 +380,15 @@
         }
 
         // Initialize dashboard when page loads if token exists
-        if(localStorage.getItem('token')) {
+        if (localStorage.getItem('token')) {
             // Small delay to ensure DOM is fully loaded
             setTimeout(() => showDashboard(), 100);
         }
 
         async function login() {
             try {
-                const res = await fetch('/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:document.getElementById('loginUser').value, password:document.getElementById('loginPass').value})});
-                if(!res.ok) throw new Error();
+                const res = await fetch('/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('loginUser').value, password: document.getElementById('loginPass').value }) });
+                if (!res.ok) throw new Error();
                 const d = await res.json();
                 localStorage.setItem('token', d.token); localStorage.setItem('role', d.rolle); localStorage.setItem('user', d.username);
                 await showDashboard();
@@ -209,7 +403,7 @@
             document.getElementById('welcomeMsg').innerText = localStorage.getItem('user') + " (" + localStorage.getItem('role') + ")";
 
             try {
-                if(localStorage.getItem('role') === 'Admin') {
+                if (localStorage.getItem('role') === 'Admin') {
                     document.getElementById('adminArea').classList.remove('hidden');
                     document.getElementById('maListCard').classList.remove('hidden');
                     // Load data with proper error handling
@@ -220,10 +414,10 @@
                     ]);
                 }
                 await loadTermine().catch(e => console.error('Failed to load Termine:', e));
-            } catch(e) {
+            } catch (e) {
                 console.error('Dashboard initialization error:', e);
                 // If token is invalid, logout
-                if(e.message && e.message.includes('401')) {
+                if (e.message && e.message.includes('401')) {
                     logout();
                 }
             }
@@ -233,20 +427,20 @@
         async function handleError(response, msgElementId) {
             const rawText = await response.text();
             let errorMessage = rawText;
-            
+
             // Versuchen, das JSON zu parsen
             try {
                 const json = JSON.parse(rawText);
                 // Wenn es ein Feld "detail" gibt (Standard bei .NET ProblemDetails), nimm das
                 if (json.detail) errorMessage = json.detail;
                 else if (json.title) errorMessage = json.title;
-            } catch(e) {
+            } catch (e) {
                 // War kein JSON, wir nehmen den rohen Text
             }
-            
+
             alert("⚠️ " + errorMessage);
-            
-            if(msgElementId) {
+
+            if (msgElementId) {
                 const el = document.getElementById(msgElementId);
                 el.innerText = errorMessage;
                 el.className = "msg-error";
@@ -257,29 +451,29 @@
         async function authFetch(url, options = {}, retries = 2) {
             let lastError = null;
 
-            for(let i = 0; i <= retries; i++) {
+            for (let i = 0; i <= retries; i++) {
                 try {
                     const res = await fetch(url, options);
-                    if(res.status === 401) {
+                    if (res.status === 401) {
                         logout();
                         throw new Error('401 Unauthorized');
                     }
                     return res;
-                } catch(e) {
+                } catch (e) {
                     lastError = e;
 
                     // Don't retry on 401
-                    if(e.message.includes('401')) throw e;
+                    if (e.message.includes('401')) throw e;
 
-                    if(i < retries) {
-                        console.warn(`Request failed (attempt ${i+1}), retrying...`, e.message);
+                    if (i < retries) {
+                        console.warn(`Request failed (attempt ${i + 1}), retrying...`, e.message);
                         await new Promise(r => setTimeout(r, 300 * (i + 1))); // 300ms, 600ms delay
                     }
                 }
             }
 
             // All retries failed - if it's a network error, likely Coder proxy session expired
-            if(lastError && lastError.name === 'TypeError' && lastError.message === 'Failed to fetch') {
+            if (lastError && lastError.name === 'TypeError' && lastError.message === 'Failed to fetch') {
                 console.error('Coder proxy session expired - reloading page...');
                 alert('Sitzung abgelaufen. Die Seite wird neu geladen.');
                 window.location.reload();
@@ -293,25 +487,25 @@
         async function fetchWithRetry(url, options, retries = 2, delay = 500) {
             let lastError = null;
 
-            for(let i = 0; i <= retries; i++) {
+            for (let i = 0; i <= retries; i++) {
                 try {
                     const res = await fetch(url, options);
 
                     // Only logout on explicit 401 Unauthorized
-                    if(res.status === 401) {
+                    if (res.status === 401) {
                         logout();
                         throw new Error('401 Unauthorized');
                     }
-                    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
                     return res;
-                } catch(e) {
+                } catch (e) {
                     lastError = e;
 
                     // Don't retry on 401
-                    if(e.message.includes('401')) throw e;
+                    if (e.message.includes('401')) throw e;
 
-                    if(i < retries) {
-                        console.warn(`Fetch attempt ${i+1} failed, retrying in ${delay}ms...`, e);
+                    if (i < retries) {
+                        console.warn(`Fetch attempt ${i + 1} failed, retrying in ${delay}ms...`, e);
                         await new Promise(resolve => setTimeout(resolve, delay));
                         delay *= 2;
                     }
@@ -319,7 +513,7 @@
             }
 
             // All retries failed - if it's a network error, likely Coder proxy session expired
-            if(lastError && lastError.name === 'TypeError' && lastError.message === 'Failed to fetch') {
+            if (lastError && lastError.name === 'TypeError' && lastError.message === 'Failed to fetch') {
                 console.error('Coder proxy session expired - reloading page...');
                 alert('Sitzung abgelaufen. Die Seite wird neu geladen.');
                 window.location.reload();
@@ -332,7 +526,7 @@
         async function loadTermine() {
             try {
                 const res = await fetchWithRetry('/termine', {
-                    headers: {'Authorization': 'Bearer '+localStorage.getItem('token')}
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
                 });
                 const data = await res.json();
                 const tbody = document.getElementById('termineTable'); tbody.innerHTML = '';
@@ -341,13 +535,13 @@
                 data.forEach(t => {
                     const mailStatus = t.erinnerungVerschickt ? '<span class="email-sent">Ja ✅</span>' : '<span class="email-wait">Geplant</span>';
                     let btns = '';
-                    if(localStorage.getItem('role') === 'Admin') {
+                    if (localStorage.getItem('role') === 'Admin') {
                         btns = `<button class="edit" onclick="editTerminById(${t.id})">Edit</button>
                                 <button class="delete" onclick="deleteTermin(${t.id})">Löschen</button>`;
                     }
                     tbody.innerHTML += `<tr><td>${new Date(t.datumUhrzeit).toLocaleString('de-DE')}</td><td>${new Date(t.endzeit).toLocaleString('de-DE')}</td><td>${escapeHtml(t.beschreibung)}</td><td>${escapeHtml(t.kundeName)}</td><td>${escapeHtml(t.mitarbeiterName)}</td><td>${mailStatus}</td><td>${btns}</td></tr>`;
                 });
-            } catch(e) {
+            } catch (e) {
                 console.error('Failed to load Termine:', e);
                 // Connection errors are handled by fetchWithRetry -> setConnectionError()
             }
@@ -356,7 +550,7 @@
         async function loadKundenTable() {
             try {
                 const res = await fetchWithRetry('/kunden', {
-                    headers: {'Authorization': 'Bearer '+localStorage.getItem('token')}
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
                 });
                 const data = await res.json();
                 const tbody = document.getElementById('kundenTable'); tbody.innerHTML = '';
@@ -380,7 +574,7 @@
                         </td>
                     </tr>`;
                 });
-            } catch(e) {
+            } catch (e) {
                 console.error('Failed to load Kunden:', e);
                 // Connection errors are handled by fetchWithRetry -> setConnectionError()
             }
@@ -393,7 +587,7 @@
         }
 
         function editKunde(k) {
-            document.getElementById('lblKunde').innerText = "Kunde bearbeiten (ID: "+k.id+")";
+            document.getElementById('lblKunde').innerText = "Kunde bearbeiten (ID: " + k.id + ")";
             document.getElementById('btnKunde').innerText = "Speichern";
             document.getElementById('btnCancelK').classList.remove('hidden');
             document.getElementById('editK_Id').value = k.id;
@@ -407,7 +601,7 @@
             document.getElementById('nk_Email').value = k.email || '';
             document.getElementById('nk_Tel').value = k.telefon || '';
         }
-        
+
         function resetKundeForm() {
             document.getElementById('lblKunde').innerText = "👥 Neuer Kunde";
             document.getElementById('btnKunde').innerText = "Kunde speichern";
@@ -436,30 +630,30 @@
             const method = id ? 'PUT' : 'POST';
 
             try {
-                const res = await authFetch(url, { method: method, headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+localStorage.getItem('token')}, body:JSON.stringify(body)});
-                if(res.ok) {
+                const res = await authFetch(url, { method: method, headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') }, body: JSON.stringify(body) });
+                if (res.ok) {
                     document.getElementById('msgKunde').innerText = "Kunde gespeichert!";
                     document.getElementById('msgKunde').className = "msg-success";
                     resetKundeForm(); loadKundenTable(); loadDropdowns();
                 } else {
                     await handleError(res, 'msgKunde');
                 }
-            } catch(e) { if(!e.message.includes('Session expired')) alert(e); }
+            } catch (e) { if (!e.message.includes('Session expired')) alert(e); }
         }
 
         async function deleteKunde(id) {
-            if(!confirm("Kunde wirklich löschen?")) return;
+            if (!confirm("Kunde wirklich löschen?")) return;
             try {
-                await authFetch('/kunden/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
+                await authFetch('/kunden/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } });
                 loadKundenTable(); loadDropdowns();
-            } catch(e) { if(!e.message.includes('Session expired')) alert(e); }
+            } catch (e) { if (!e.message.includes('Session expired')) alert(e); }
         }
 
         // --- MITARBEITER LOGIK ---
         async function loadMitarbeiterTable() {
             try {
                 const res = await fetchWithRetry('/mitarbeiter', {
-                    headers: {'Authorization': 'Bearer '+localStorage.getItem('token')}
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
                 });
                 const data = await res.json();
                 const tbody = document.getElementById('maTable'); tbody.innerHTML = '';
@@ -470,7 +664,7 @@
                         <button class="delete" onclick="deleteMitarbeiter(${m.id})">Löschen</button>
                     </td></tr>`;
                 });
-            } catch(e) {
+            } catch (e) {
                 console.error('Failed to load Mitarbeiter:', e);
                 // Connection errors are handled by fetchWithRetry -> setConnectionError()
             }
@@ -513,32 +707,32 @@
             const url = id ? '/mitarbeiter/' + id : '/mitarbeiter';
             const method = id ? 'PUT' : 'POST';
             try {
-                const res = await authFetch(url, { method: method, headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+localStorage.getItem('token')}, body:JSON.stringify(body)});
-                if(res.ok) {
+                const res = await authFetch(url, { method: method, headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') }, body: JSON.stringify(body) });
+                if (res.ok) {
                     document.getElementById('msgMitarbeiter').innerText = "Gespeichert!";
                     document.getElementById('msgMitarbeiter').className = "msg-success";
                     resetMitarbeiterForm(); loadMitarbeiterTable(); loadDropdowns();
                 } else {
                     await handleError(res, 'msgMitarbeiter');
                 }
-            } catch(e) { if(!e.message.includes('Session expired')) alert(e); }
+            } catch (e) { if (!e.message.includes('Session expired')) alert(e); }
         }
 
         async function deleteMitarbeiter(id) {
-            if(!confirm("Löschen?")) return;
+            if (!confirm("Löschen?")) return;
             try {
-                await authFetch('/mitarbeiter/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
+                await authFetch('/mitarbeiter/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } });
                 loadMitarbeiterTable(); loadDropdowns();
-            } catch(e) { if(!e.message.includes('Session expired')) alert(e); }
+            } catch (e) { if (!e.message.includes('Session expired')) alert(e); }
         }
-        
+
         // --- TERMIN LOGIK ---
         async function loadDropdowns() {
             try {
-                const headers = {'Authorization': 'Bearer '+localStorage.getItem('token')};
+                const headers = { 'Authorization': 'Bearer ' + localStorage.getItem('token') };
                 const [rk, rm] = await Promise.all([
-                    fetchWithRetry('/kunden', {headers}),
-                    fetchWithRetry('/mitarbeiter', {headers})
+                    fetchWithRetry('/kunden', { headers }),
+                    fetchWithRetry('/mitarbeiter', { headers })
                 ]);
                 const k = await rk.json(); const m = await rm.json();
 
@@ -552,14 +746,14 @@
 
                 const selM = document.getElementById('newT_MA'); selM.innerHTML = '';
                 m.forEach(x => selM.innerHTML += `<option value="${x.id}">${escapeHtml(x.username)}</option>`);
-            } catch(e) {
+            } catch (e) {
                 console.error('Failed to load dropdowns:', e);
                 // Connection errors are handled by fetchWithRetry -> setConnectionError()
             }
         }
 
         // Auto-set end time to 30 minutes after start time
-        document.getElementById('newT_Datum').addEventListener('change', function() {
+        document.getElementById('newT_Datum').addEventListener('change', function () {
             const startInput = document.getElementById('newT_Datum');
             const endInput = document.getElementById('newT_Ende');
 
@@ -591,6 +785,7 @@
             document.getElementById('newT_Desc').value = t.beschreibung;
             document.getElementById('newT_Datum').value = t.datumUhrzeit;
             document.getElementById('newT_Ende').value = t.endzeit;
+            document.getElementById('newT_Remind').value = t.erinnerungVorlaufMinuten ? (t.erinnerungVorlaufMinuten / 60) : 24;
         }
 
         function resetTerminForm() {
@@ -601,6 +796,7 @@
             document.getElementById('newT_Desc').value = '';
             document.getElementById('newT_Datum').value = '';
             document.getElementById('newT_Ende').value = '';
+            document.getElementById('newT_Remind').value = '24';
             document.getElementById('msgTermin').innerText = '';
         }
 
@@ -611,30 +807,32 @@
                 endzeit: document.getElementById('newT_Ende').value,
                 beschreibung: document.getElementById('newT_Desc').value,
                 kundeId: parseInt(document.getElementById('newT_Kunde').value),
-                mitarbeiterId: parseInt(document.getElementById('newT_MA').value)
+                mitarbeiterId: parseInt(document.getElementById('newT_MA').value),
+                erinnerungVorlaufMinuten: parseFloat(document.getElementById('newT_Remind').value) * 60
             };
             const url = id ? '/termine/' + id : '/termine';
             const method = id ? 'PUT' : 'POST';
 
             try {
-                const res = await authFetch(url, { method: method, headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+localStorage.getItem('token')}, body:JSON.stringify(body)});
-                if(res.ok) {
+                const res = await authFetch(url, { method: method, headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') }, body: JSON.stringify(body) });
+                if (res.ok) {
                     document.getElementById('msgTermin').innerText = "Termin erfolgreich gebucht!";
                     document.getElementById('msgTermin').className = "msg-success";
                     resetTerminForm(); loadTermine();
                 } else {
                     await handleError(res, 'msgTermin');
                 }
-            } catch(e) { if(!e.message.includes('Session expired')) alert(e); }
+            } catch (e) { if (!e.message.includes('Session expired')) alert(e); }
         }
 
         async function deleteTermin(id) {
-            if(!confirm("Löschen?")) return;
+            if (!confirm("Löschen?")) return;
             try {
-                await authFetch('/termine/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
+                await authFetch('/termine/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } });
                 loadTermine();
-            } catch(e) { if(!e.message.includes('Session expired')) alert(e); }
+            } catch (e) { if (!e.message.includes('Session expired')) alert(e); }
         }
     </script>
 </body>
+
 </html>

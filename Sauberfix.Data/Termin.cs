@@ -21,6 +21,9 @@ namespace Sauberfix.Data
         // --- NEUES FELD ---
         public bool ErinnerungVerschickt { get; set; } = false;
 
+        // Default: 24 Stunden = 1440 Minuten
+        public int ErinnerungVorlaufMinuten { get; set; } = 1440;
+
         public int KundeId { get; set; }
         public Kunde? Kunde { get; set; }
 

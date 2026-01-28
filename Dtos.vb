@@ -47,6 +47,7 @@ Public Class CreateTerminDto
     Public Property Beschreibung As String
     Public Property KundeId As Integer
     Public Property MitarbeiterId As Integer
+    Public Property ErinnerungVorlaufMinuten As Integer = 1440 ' Default 24h
 End Class
 
 Public Class TerminResponseDto
@@ -61,6 +62,7 @@ Public Class TerminResponseDto
     Public Property MitarbeiterId As Integer?
     Public Property MitarbeiterName As String
     Public Property ErinnerungVerschickt As Boolean
+    Public Property ErinnerungVorlaufMinuten As Integer
 End Class
 
 ' --- LOGIN ---
