@@ -68,6 +68,17 @@ Namespace Services
                                 Dim message = New MimeMessage()
                                 Dim senderName = _configuration("SmtpSettings:SenderName")
                                 Dim senderEmail = _configuration("SmtpSettings:SenderEmail")
+
+                                ' DEBUG: Konfiguration prüfen
+                                If String.IsNullOrEmpty(senderName) Then
+                                    _logger.LogError("KONFIG ERROR: SmtpSettings:SenderName ist LEER! Nutze Fallback.")
+                                    senderName = "Sauberfix Erinnerung (Fallback)"
+                                End If
+                                If String.IsNullOrEmpty(senderEmail) Then
+                                    _logger.LogError("KONFIG ERROR: SmtpSettings:SenderEmail ist LEER! Nutze Fallback.")
+                                    senderEmail = "noreply@flairtec.de"
+                                End If
+                                
                                 message.From.Add(New MailboxAddress(senderName, senderEmail))
                                 message.To.Add(New MailboxAddress(t.Kunde.Vorname & " " & t.Kunde.Nachname, t.Kunde.Email))
                                 message.Subject = "Erinnerung an Ihren Termin bei Sauberfix"
