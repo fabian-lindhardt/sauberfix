@@ -45,7 +45,6 @@ Namespace Services
                                            .ToList()
 
                         _logger.LogInformation($"[ErinnerungsService] Prüfe {candidates.Count} Kandidaten...")
-                        _logger.LogInformation($"[DEBUG] Serverzeit (UTC): {nowUtc} | Verwendete Zeit (DE): {nowGermany}")
 
                         Dim fälligeTermine As New List(Of Termin)
                         For Each t In candidates
@@ -91,9 +90,15 @@ Namespace Services
                                     client.CheckCertificateRevocation = False
                                     client.ServerCertificateValidationCallback = Function(s, c, h, e) True
                                     
+                                    ' Wenn Username/Passwort vorhanden, authentifizieren
+                                    Dim smtpUser = _configuration("SmtpSettings:Username")
+                                    Dim smtpPass = _configuration("SmtpSettings:Password")
+
                                     client.Connect(server, port, False)
-                                    ' Note: No authentication for now as none was provided.
-                                    ' If needed: client.Authenticate("user", "pass")
+
+                                    If Not String.IsNullOrEmpty(smtpUser) Then
+                                        client.Authenticate(smtpUser, smtpPass)
+                                    End If
                                     
                                     client.Send(message)
                                     client.Disconnect(True)
