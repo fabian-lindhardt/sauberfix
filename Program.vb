@@ -22,6 +22,18 @@ Module Program
             options.UseNpgsql(connectionString, Sub(b) b.MigrationsAssembly("Sauberfix.Data"))
         End Sub)
 
+        ' CLI Argumente prüfen (für manuelles Seeding)
+        If args.Contains("seed") Then
+            Dim appTemp = builder.Build()
+            Using scope = appTemp.Services.CreateScope()
+                Dim db = scope.ServiceProvider.GetRequiredService(Of AppDbContext)()
+                db.Database.Migrate() ' Sicherstellen, dass DB aktuell ist
+                DatabaseSeeder.SeedSampleData(db)
+            End Using
+            Console.WriteLine(">>> Exiting after seeding.")
+            Environment.Exit(0)
+        End If
+
         Dim jwtKey = builder.Configuration("JwtSettings:Key")
         Dim keyBytes = Encoding.UTF8.GetBytes(jwtKey)
 
